@@ -29,7 +29,7 @@ const state = createState({
   data: {
     isDragging: false,
     refs: undefined as Refs | undefined,
-    color: "red",
+    color: "#42a6f6",
     size: 16,
     marks: [] as Mark[],
     currentMark: undefined as Mark | undefined,

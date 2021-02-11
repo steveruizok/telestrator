@@ -12,7 +12,7 @@ export const colors = [
   "#42a6f6",
   "#74eff7",
   // "#94afc2",
-  "#f4f4f4",
+  "#ffffff",
   "#1a1c2c",
   // "#566c86",
   // "#343d57",

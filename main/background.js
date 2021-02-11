@@ -25,6 +25,7 @@ if (isProd) {
 
   mainWindow.setIgnoreMouseEvents(true, { forward: true })
   mainWindow.setAlwaysOnTop(true, "floating")
+  mainWindow.maximize()
 
   if (isProd) {
     await mainWindow.loadURL("app://./home.html")

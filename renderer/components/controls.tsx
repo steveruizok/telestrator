@@ -108,14 +108,14 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
   transition: all 0.25s;
   border-radius: 2px 20px 0 0;
-  background-color: rgba(255, 255, 255, 0);
+  background-color: rgba(144, 144, 144, 0);
   transform: ${({ showActive }) =>
     showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
 
   :hover {
     opacity: 1;
     transform: translate(0px, 0px);
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(144, 144, 144, 0.1);
   }
 
   button {
@@ -153,11 +153,12 @@ const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
     background-color: ${({ color }) => color};
     height: 100%;
     width: 100%;
-    transform: scale(${({ isSelected }) => (isSelected ? 0.5 : 0.2)});
+    transform: scale(${({ isSelected }) => (isSelected ? 0.68 : 0.4)});
     transition: transform 0.12s;
   }
 
   &:hover:after {
+    border: 1px solid rgba(144, 144, 144, 0);
     transform: scale(1);
   }
 `
@@ -229,7 +230,7 @@ const ToolButton = styled.button<{
 
   &:enabled:hover {
     opacity: 1;
-    color: rgba(255, 255, 255, 1);
+    color: rgba(144, 144, 144, 1);
   }
 
   &::before {
@@ -243,11 +244,11 @@ const ToolButton = styled.button<{
     transform: scale(0.85);
     transition: all 0.16s;
     z-index: -1;
-    background-color: rgba(255, 255, 255, 0);
+    background-color: rgba(144, 144, 144, 0);
   }
 
   &:enabled:hover::before {
     transform: scale(1);
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(144, 144, 144, 0.2);
   }
 `
