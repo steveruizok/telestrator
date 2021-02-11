@@ -43,12 +43,12 @@ export default function App() {
     <Layout>
       <CanvasContainer
         ref={rCanvasFrame}
-        onPointerDown={(e) =>
+        onPointerDown={(e) => {
           state.send("STARTED_DRAWING", {
             x: mvPoint.x.get(),
             y: mvPoint.y.get(),
           })
-        }
+        }}
         onPointerUp={(e) =>
           state.send("STOPPED_DRAWING", {
             x: mvPoint.x.get(),

@@ -20,6 +20,9 @@ export default function Controls() {
   const selectedColor = useSelector((state) => state.data.color)
   const canUndo = useSelector((state) => state.can("UNDO"))
   const canRedo = useSelector((state) => state.can("REDO"))
+  const selectedTool = useSelector((state) =>
+    state.isIn("pencil") ? "pencil" : state.isIn("eraser") ? "eraser" : null
+  )
 
   // Deactivate when escape is pressed
   React.useEffect(() => {
@@ -44,6 +47,7 @@ export default function Controls() {
         <ColorButton
           key={i}
           color={color}
+          isSelected={selectedColor === color}
           onClick={() => state.send("SELECTED_COLOR", color)}
         />
       ))}
@@ -56,41 +60,42 @@ export default function Controls() {
           color={selectedColor}
         />
       ))}
-      <Button disabled={!canUndo} onClick={() => state.send("UNDO")}>
+      <ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
         <CornerUpLeft />
-      </Button>
-      <Button disabled={!canRedo} onClick={() => state.send("REDO")}>
+      </ToolButton>
+      <ToolButton disabled={!canRedo} onClick={() => state.send("REDO")}>
         <CornerUpRight />
-      </Button>
-      <IconButton
-        color={state.whenIn({ pencil: "accent", eraser: "text" })}
+      </ToolButton>
+      <ToolButton
+        isSelected={selectedTool === "pencil"}
         onClick={() => state.send("SELECTED_PENCIL")}
       >
         <Edit2 size={24} />
-      </IconButton>
-      <IconButton
-        color={state.whenIn({ pencil: "text", eraser: "accent" })}
+      </ToolButton>
+      <ToolButton
+        isSelected={selectedTool === "eraser"}
         onClick={() => state.send("SELECTED_ERASER")}
         onDoubleClick={() => state.send("CLEARED_MARKS")}
       >
         <MinusCircle size={24} />
-      </IconButton>
-      <IconButton
+      </ToolButton>
+      <ToolButton
         onPointerEnter={() => state.send("ENTERED_DRAGGING")}
         onPointerLeave={() => state.send("LEFT_DRAGGING")}
         onPointerDown={() => state.send("STARTED_DRAGGING")}
         onPointerUp={() => state.send("STOPPED_DRAGGING")}
       >
         <Move size={24} />
-      </IconButton>
-      <IconButton onClick={() => state.send("DEACTIVATED")}>
+      </ToolButton>
+      <ToolButton onClick={() => state.send("DEACTIVATED")}>
         <X size={24} />
-      </IconButton>
+      </ToolButton>
     </ControlsContainer>
   )
 }
 
 const ControlsContainer = styled.div<{ showActive: boolean }>`
+  cursor: pointer;
   position: absolute;
   bottom: 0;
   left: 0;
@@ -101,13 +106,36 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   grid-auto-rows: 40px;
   padding: 8px;
   opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
-  transition: opacity 0.2s;
+  transition: all 0.25s;
+  border-radius: 2px 20px 0 0;
+  background-color: rgba(255, 255, 255, 0);
+  transform: ${({ showActive }) =>
+    showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
+
   :hover {
     opacity: 1;
+    transform: translate(0px, 0px);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  button {
+    cursor: pointer;
+    position: relative;
+    outline: none;
+    z-index: 2;
+    border-radius: 100%;
+    border: none;
+    padding: 0;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: rgb(144, 144, 144, 1);
   }
 `
 
-const ColorButton = styled.button<{ color: string }>`
+const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
   border: none;
   padding: 0;
   font-weight: bold;
@@ -125,7 +153,7 @@ const ColorButton = styled.button<{ color: string }>`
     background-color: ${({ color }) => color};
     height: 100%;
     width: 100%;
-    transform: scale(0.2);
+    transform: scale(${({ isSelected }) => (isSelected ? 0.5 : 0.2)});
     transition: transform 0.12s;
   }
 
@@ -139,66 +167,87 @@ const SizeButton = styled.button<{
   size: number
   color: string
 }>`
-  border: none;
-  height: 100%;
-  width: 100%;
-  padding: 0;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  outline: none;
-  transition: background-color 0.12s;
-  border-radius: 100%;
   opacity: ${({ isSelected }) => (isSelected ? "1" : ".5")};
+  background-color: (
+    ${({ isSelected }) =>
+      isSelected ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0)"}
+  );
+
+  &::before {
+    content: "";
+    border-radius: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    transform: scale(0.85);
+    transition: all 0.16s;
+    z-index: -1;
+    background-color: rgba(255, 255, 255, 0);
+  }
+
+  &:hover::before {
+    transform: scale(1);
+    background-color: rgba(255, 255, 255, 0.3);
+  }
 
   &:hover {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
   }
 
   &::after {
     content: "";
     display: block;
     border-radius: 100%;
-    background-color: rgba(255, 255, 255, 0.9);
-    height: 100%;
-    width: 100%;
+    background-color: ${({ color }) => color};
     height: ${({ size }) => size}px;
     width: ${({ size }) => size}px;
+    transition: transform 0.12s;
   }
 
   &:hover:after {
     transform: scale(1);
-    background-color: ${({ color }) => color};
+  }
+
+  &:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
   }
 `
 
-const Button = styled.button`
-  outline: none;
-  border-radius: 100%;
-  border: none;
-  padding: 0;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  border: none;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.6);
-    color: #000;
-  }
+const ToolButton = styled.button<{
+  isSelected?: boolean
+}>`
+  color: ${({ isSelected }) =>
+    isSelected ? "rgba(255, 255, 255, 1)" : "rgb(144, 144, 144, 1)"};
+  transition: all 0.12s;
 
   &:disabled {
     opacity: 0.5;
   }
-`
 
-const IconButton = styled(Button)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  &:enabled:hover {
+    opacity: 1;
+    color: rgba(255, 255, 255, 1);
+  }
+
+  &::before {
+    content: "";
+    border-radius: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    transform: scale(0.85);
+    transition: all 0.16s;
+    z-index: -1;
+    background-color: rgba(255, 255, 255, 0);
+  }
+
+  &:enabled:hover::before {
+    transform: scale(1);
+    background-color: rgba(255, 255, 255, 0.3);
+  }
 `

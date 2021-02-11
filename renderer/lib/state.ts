@@ -30,7 +30,7 @@ const state = createState({
     isDragging: false,
     refs: undefined as Refs | undefined,
     color: "red",
-    size: 6,
+    size: 16,
     marks: [] as Mark[],
     currentMark: undefined as Mark | undefined,
     redos: [] as Mark[],
@@ -43,148 +43,159 @@ const state = createState({
     SELECTED_COLOR: "setColor",
     SELECTED_SIZE: "setSize",
   },
+
   states: {
-    loading: {
+    tool: {
       on: {
-        LOADED: [
-          "setRefs",
-          {
-            get: "elements",
-            do: ["setupCanvases", "clearCurrentMark", "clearHistoryMarks"],
+        CLEARED_MARKS: {
+          get: "elements",
+          do: ["clearHistory", "clearCurrentCanvas", "clearMarksCanvas"],
+          to: ["pencil", "selecting"],
+        },
+      },
+      initial: "pencil",
+      states: {
+        pencil: {
+          on: {
+            STARTED_DRAWING: {
+              get: "elements",
+              do: ["beginPencilMark", "drawCurrentMark"],
+            },
+            SELECTED_ERASER: { to: "eraser" },
           },
-          {
-            to: "ready",
+        },
+        eraser: {
+          on: {
+            STARTED_DRAWING: {
+              get: "elements",
+              secretlyDo: ["beginEraserMark", "drawCurrentMark"],
+            },
+            SELECTED_COLOR: { to: "pencil" },
+            SELECTED_PENCIL: { to: "pencil" },
           },
-        ],
+        },
+      },
+    },
+    app: {
+      initial: "loading",
+      states: {
+        loading: {
+          on: {
+            LOADED: [
+              "setRefs",
+              {
+                get: "elements",
+                do: ["setupCanvases", "clearCurrentCanvas", "clearMarksCanvas"],
+              },
+              {
+                to: "ready",
+              },
+            ],
+          },
+        },
+        ready: {
+          initial: "inactive",
+          states: {
+            inactive: {
+              onEnter: "deactivate",
+              on: {
+                ACTIVATED: { to: "active" },
+                ENTERED_CONTROLS: { to: "selecting" },
+              },
+            },
+            selecting: {
+              onEnter: "activate",
+              on: {
+                LEFT_CONTROLS: { to: "inactive" },
+                SELECTED: { to: "active" },
+              },
+            },
+            active: {
+              onEnter: "activate",
+              on: {
+                DEACTIVATED: { to: "inactive" },
+                UNDO: {
+                  if: "hasMarks",
+                  do: [
+                    "undoMark",
+                    "drawMarks",
+                    "clearCurrentCanvas",
+                    "drawCurrentMark",
+                  ],
+                },
+                REDO: {
+                  if: "hasRedos",
+                  do: [
+                    "redoMark",
+                    "drawMarks",
+                    "clearCurrentCanvas",
+                    "drawCurrentMark",
+                  ],
+                },
+                UNLOADED: {
+                  do: "clearRefs",
+                  to: "loading",
+                },
+                RESIZED: {
+                  get: "elements",
+                  secretlyDo: ["handleResize", "drawMarks", "drawCurrentMark"],
+                },
+              },
+              states: {
+                frame: {
+                  initial: "fixed",
+                  states: {
+                    fixed: {
+                      on: {
+                        STARTED_DRAGGING: { to: "dragging" },
+                      },
+                    },
+                    dragging: {
+                      on: {
+                        STOPPED_DRAGGING: { to: "fixed" },
+                      },
+                    },
+                  },
+                },
+                canvas: {
+                  initial: "notDrawing",
+                  states: {
+                    notDrawing: {
+                      on: {
+                        STARTED_DRAWING: { to: "drawing" },
+                      },
+                    },
+                    drawing: {
+                      onEnter: "clearRedos",
+                      on: {
+                        STOPPED_DRAWING: {
+                          get: "elements",
+                          do: [
+                            "completeMark",
+                            "clearCurrentMark",
+                            "clearCurrentCanvas",
+                            "drawMarks",
+                          ],
+                          to: "notDrawing",
+                        },
+                        MOVED_CURSOR: {
+                          get: "elements",
+                          secretlyDo: ["addPointToMark", "drawCurrentMark"],
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
     marks: {
       states: {
         noMarks: {},
         hasMarks: {},
-      },
-    },
-    ready: {
-      initial: "inactive",
-      states: {
-        inactive: {
-          onEnter: "deactivate",
-          on: {
-            ACTIVATED: { to: "active" },
-            ENTERED_CONTROLS: { to: "selecting" },
-          },
-        },
-        selecting: {
-          onEnter: "activate",
-          on: {
-            LEFT_CONTROLS: { to: "inactive" },
-            SELECTED: { to: "active" },
-          },
-        },
-        active: {
-          onEnter: "activate",
-          on: {
-            DEACTIVATED: { to: "inactive" },
-            UNDO: {
-              if: "hasMarks",
-              do: [
-                "undoMark",
-                "drawMarks",
-                "clearCurrentMark",
-                "drawCurrentMark",
-              ],
-            },
-            REDO: {
-              if: "hasRedos",
-              do: [
-                "redoMark",
-                "drawMarks",
-                "clearCurrentMark",
-                "drawCurrentMark",
-              ],
-            },
-            UNLOADED: {
-              do: "clearRefs",
-              to: "loading",
-            },
-            RESIZED: {
-              get: "elements",
-              secretlyDo: ["handleResize", "drawMarks", "drawCurrentMark"],
-            },
-          },
-          states: {
-            frame: {
-              initial: "fixed",
-              states: {
-                fixed: {
-                  on: {
-                    STARTED_DRAGGING: { to: "dragging" },
-                  },
-                },
-                dragging: {
-                  on: {
-                    STOPPED_DRAGGING: { to: "fixed" },
-                  },
-                },
-              },
-            },
-            tool: {
-              on: {
-                CLEARED_MARKS: {
-                  get: "elements",
-                  do: ["clearHistory", "clearCurrentMark", "clearHistoryMarks"],
-                  to: "pencil",
-                },
-              },
-              initial: "pencil",
-              states: {
-                pencil: {
-                  on: {
-                    STARTED_DRAWING: {
-                      get: "elements",
-                      do: ["beginPencilMark", "drawCurrentMark"],
-                    },
-                    SELECTED_ERASER: { to: "eraser" },
-                  },
-                },
-                eraser: {
-                  on: {
-                    STARTED_DRAWING: {
-                      get: "elements",
-                      secretlyDo: ["beginEraserMark", "drawCurrentMark"],
-                    },
-                    SELECTED_COLOR: { to: "pencil" },
-                    SELECTED_PENCIL: { to: "pencil" },
-                  },
-                },
-              },
-            },
-            canvas: {
-              initial: "notDrawing",
-              states: {
-                notDrawing: {
-                  on: {
-                    STARTED_DRAWING: { to: "drawing" },
-                  },
-                },
-                drawing: {
-                  onEnter: "clearRedos",
-                  on: {
-                    STOPPED_DRAWING: {
-                      get: "elements",
-                      do: "completeMark",
-                      to: "notDrawing",
-                    },
-                    MOVED_CURSOR: {
-                      get: "elements",
-                      secretlyDo: ["addPointToMark", "drawCurrentMark"],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
       },
     },
   },
@@ -199,11 +210,9 @@ const state = createState({
   },
   conditions: {
     hasMarks(data) {
-      console.log(data.marks)
       return data.marks.length > 0
     },
     hasRedos(data) {
-      console.log(data.redos)
       return data.redos.length > 0
     },
   },
@@ -257,22 +266,15 @@ const state = createState({
     setSize(data, payload) {
       data.size = payload
     },
-    beginPencilMark(data, payload) {
-      const { x, y } = payload
-      data.currentMark = {
-        size: data.size,
-        color: data.color,
-        strength: 1,
-        eraser: false,
-        points: [x, y, x, y],
-      }
+    clearCurrentMark(data) {
+      data.currentMark = undefined
     },
-    clearCurrentMark(data, payload, elements: Elements) {
+    clearCurrentCanvas(data, payload, elements: Elements) {
       const cvs = elements.currentCanvas
       const ctx = cvs.getContext("2d")
       ctx.clearRect(0, 0, cvs.width, cvs.height)
     },
-    clearHistoryMarks(data, payload, elements: Elements) {
+    clearMarksCanvas(data, payload, elements: Elements) {
       const cvs = elements.marksCanvas
       const ctx = cvs.getContext("2d")
       ctx.clearRect(0, 0, cvs.width, cvs.height)
@@ -295,6 +297,16 @@ const state = createState({
         }
       }
     },
+    beginPencilMark(data, payload) {
+      const { x, y } = payload
+      data.currentMark = {
+        size: data.size,
+        color: data.color,
+        strength: 1,
+        eraser: false,
+        points: [x, y, x, y, x, y, x, y],
+      }
+    },
     beginEraserMark(data, payload) {
       const { x, y } = payload
       data.currentMark = {
@@ -302,7 +314,7 @@ const state = createState({
         color: data.color,
         eraser: true,
         strength: 1,
-        points: [x, y, x, y],
+        points: [x, y, x, y, x, y, x, y],
       }
     },
     drawCurrentMark(data, payload, elements: Elements) {
@@ -325,7 +337,6 @@ const state = createState({
     },
     completeMark(data) {
       data.currentMark.points = cSpline(data.currentMark.points)
-      console.log(data.currentMark.points)
       data.marks.push(data.currentMark)
     },
     addPointToMark(data, payload) {
@@ -355,11 +366,13 @@ function drawMark(
   ctx.strokeStyle = mark.color
   ctx.globalCompositeOperation = "source-over"
 
-  const [x, y, ...rest] = mark.points
+  const pts = layer === "current" ? cSpline(mark.points) : mark.points
+
+  const [x, y, ...rest] = pts
 
   ctx.moveTo(x, y)
 
-  for (let i = 0; i < rest.length; i + 2) {
+  for (let i = 0; i < rest.length - 1; i += 2) {
     ctx.lineTo(rest[i], rest[i + 1])
   }
 
@@ -374,7 +387,7 @@ function drawMark(
   ctx.restore()
 }
 
-state.onUpdate((update) => console.log(update.active, update.log[0]))
+// state.onUpdate((update) => console.log(update.active, update.log[0]))
 
 export const useSelector = createSelectorHook(state)
 export default state
