@@ -1,13 +1,14 @@
-import state from "lib/state"
-import styled from "styled-components"
 import * as React from "react"
-import usePointer from "hooks/usePointer"
+import styled from "styled-components"
+import state, { useSelector } from "lib/state"
+import Cursor from "./cursor"
 
 export default function App() {
   const rCanvasFrame = React.useRef<HTMLDivElement>()
   const rMarksCanvas = React.useRef<HTMLCanvasElement>()
   const rCurrentCanvas = React.useRef<HTMLCanvasElement>()
-  const mvPoint = usePointer(rCanvasFrame)
+
+  const showCursor = useSelector((state) => state.isInAny("active"))
 
   React.useEffect(() => {
     state.send("LOADED", {
@@ -18,17 +19,12 @@ export default function App() {
     return () => state.send("UNLOADED")
   }, [])
 
-  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    state.send("MOVED_CURSOR", { x: mvPoint.x.get(), y: mvPoint.y.get() })
-  }
-
   React.useEffect(() => {
     function handleResize() {
       state.send("RESIZED")
     }
 
     handleResize()
-
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   })
@@ -37,23 +33,33 @@ export default function App() {
     <Layout>
       <CanvasContainer
         ref={rCanvasFrame}
-        onPointerDown={(e) => {
+        onPointerDown={(e) =>
           state.send("STARTED_DRAWING", {
-            x: mvPoint.x.get(),
-            y: mvPoint.y.get(),
-          })
-        }}
-        onPointerUp={(e) =>
-          state.send("STOPPED_DRAWING", {
-            x: mvPoint.x.get(),
-            y: mvPoint.y.get(),
+            pressure: e.pressure,
+            tiltX: e.tiltX,
+            tiltY: e.tiltY,
           })
         }
-        onPointerMove={handlePointerMove}
+        onPointerUp={(e) =>
+          state.send("STOPPED_DRAWING", {
+            pressure: e.pressure,
+            tiltX: e.tiltX,
+            tiltY: e.tiltY,
+          })
+        }
+        onPointerMove={(e) =>
+          state.send("MOVED_CURSOR", {
+            pressure: e.pressure,
+            tiltX: e.tiltX,
+            tiltY: e.tiltY,
+          })
+        }
+        // onPointerLeave={() => state.send("DEACTIVATED")}
       >
         <canvas ref={rMarksCanvas} width={400} height={400} />
         <canvas ref={rCurrentCanvas} width={400} height={400} />
       </CanvasContainer>
+      {showCursor && <Cursor />}
     </Layout>
   )
 }

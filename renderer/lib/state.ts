@@ -1,13 +1,9 @@
 import electron from "electron"
 import { RefObject } from "react"
 import { createSelectorHook, createState } from "@state-designer/react"
-import { create } from "lodash"
 import cSpline from "cardinal-spline"
-
-interface Point {
-  x: number
-  y: number
-}
+import { mvPointer } from "hooks/usePointer"
+import * as defaultValues from "lib/defaults"
 
 interface Mark {
   size: number
@@ -15,6 +11,15 @@ interface Mark {
   eraser: boolean
   points: number[]
   strength: number
+}
+
+interface CompleteMark {
+  size: number
+  color: string
+  eraser: boolean
+  points: number[]
+  strength: number
+  path: Path2D
 }
 
 type Elements = {
@@ -29,14 +34,14 @@ const state = createState({
   data: {
     isFading: true,
     isDragging: false,
-    fadeDelay: 0.5,
-    fadeDuration: 2,
+    fadeDelay: 0.2,
+    fadeDuration: 1,
     refs: undefined as Refs | undefined,
     color: "#42a6f6",
     size: 16,
-    marks: [] as Mark[],
+    marks: [] as CompleteMark[],
     currentMark: undefined as Mark | undefined,
-    redos: [] as Mark[],
+    redos: [] as CompleteMark[],
     canvasSize: {
       width: 0,
       height: 0,
@@ -45,8 +50,8 @@ const state = createState({
   on: {
     SELECTED_COLOR: "setColor",
     SELECTED_SIZE: "setSize",
+    LOADED: ["setRefs", "setupCanvases"],
   },
-
   states: {
     app: {
       initial: "loading",
@@ -54,10 +59,9 @@ const state = createState({
         loading: {
           on: {
             LOADED: [
-              "setRefs",
               {
                 get: "elements",
-                do: ["setupCanvases", "clearCurrentCanvas", "clearMarksCanvas"],
+                do: ["clearCurrentCanvas", "clearMarksCanvas"],
               },
               {
                 to: "ready",
@@ -84,15 +88,16 @@ const state = createState({
               },
             },
             active: {
-              onEnter: ["activate", { get: "elements", do: "handleResize" }],
+              onEnter: ["activate", { get: "elements", do: "resizeCanvases" }],
               on: {
                 DEACTIVATED: { to: "inactive" },
+                CHANGED_COLOR_KEY: { do: "setColorFromKey" },
                 UNDO: {
                   get: "elements",
                   if: "hasMarks",
                   do: [
                     "undoMark",
-                    "drawMarks",
+                    "drawPreviousMarks",
                     "clearCurrentCanvas",
                     "drawCurrentMark",
                   ],
@@ -102,14 +107,18 @@ const state = createState({
                   if: "hasRedos",
                   do: [
                     "redoMark",
-                    "drawMarks",
+                    "drawPreviousMarks",
                     "clearCurrentCanvas",
                     "drawCurrentMark",
                   ],
                 },
                 RESIZED: {
                   get: "elements",
-                  secretlyDo: ["handleResize", "drawMarks", "drawCurrentMark"],
+                  secretlyDo: [
+                    "resizeCanvases",
+                    "drawPreviousMarks",
+                    "drawCurrentMark",
+                  ],
                 },
                 UNLOADED: {
                   do: "clearRefs",
@@ -122,7 +131,7 @@ const state = createState({
                     HARD_CLEARED: {
                       get: "elements",
                       do: [
-                        "clearHistory",
+                        "clearPreviousMarks",
                         "clearCurrentMark",
                         "clearCurrentCanvas",
                         "clearMarksCanvas",
@@ -132,7 +141,7 @@ const state = createState({
                     MEDIUM_CLEARED: {
                       get: "elements",
                       do: [
-                        "clearHistory",
+                        "clearPreviousMarks",
                         "clearCurrentMark",
                         "clearCurrentCanvas",
                         "clearMarksCanvas",
@@ -142,7 +151,7 @@ const state = createState({
                     SOFT_CLEARED: {
                       get: "elements",
                       do: [
-                        "clearHistory",
+                        "clearPreviousMarks",
                         "clearCurrentMark",
                         "clearCurrentCanvas",
                         "clearMarksCanvas",
@@ -169,21 +178,7 @@ const state = createState({
                         },
                         SELECTED_COLOR: { to: "pencil" },
                         SELECTED_PENCIL: { to: "pencil" },
-                      },
-                    },
-                  },
-                },
-                frame: {
-                  initial: "fixed",
-                  states: {
-                    fixed: {
-                      on: {
-                        STARTED_DRAGGING: { to: "dragging" },
-                      },
-                    },
-                    dragging: {
-                      on: {
-                        STOPPED_DRAGGING: { to: "fixed" },
+                        SELECTED_ERASER: { to: "pencil" },
                       },
                     },
                   },
@@ -204,8 +199,8 @@ const state = createState({
                           do: [
                             "completeMark",
                             "clearCurrentMark",
+                            "drawPreviousMarks",
                             "clearCurrentCanvas",
-                            "drawMarks",
                           ],
                           to: ["notDrawing", "hasMarks"],
                         },
@@ -227,7 +222,17 @@ const state = createState({
       initial: "noMarks",
       states: {
         notFading: {},
-        noMarks: {},
+        noMarks: {
+          onEnter: {
+            get: "elements",
+            secretlyDo: [
+              "clearPreviousMarks",
+              "clearCurrentMark",
+              "clearCurrentCanvas",
+              "clearMarksCanvas",
+            ],
+          },
+        },
         hasMarks: {
           onEnter: {
             unless: "fadingEnabled",
@@ -237,15 +242,16 @@ const state = createState({
             onRepeat: [
               {
                 unless: "hasMarks",
-                secretlyTo: "noMarks",
-              },
-              {
-                get: "elements",
-                secretlyDo: [
-                  "fadeMarks",
-                  "removeFadedMarks",
-                  "clearMarksCanvas",
-                  "drawMarks",
+                to: "noMarks",
+                else: [
+                  {
+                    get: "elements",
+                    secretlyDo: ["fadeMarks", "removeFadedMarks"],
+                  },
+                  {
+                    if: "hasFadingMarks",
+                    secretlyDo: ["clearMarksCanvas", "drawPreviousMarks"],
+                  },
                 ],
               },
             ],
@@ -256,10 +262,20 @@ const state = createState({
   },
   results: {
     elements(data) {
+      // console.log(data.refs)
+
+      const frame = data.refs.frame.current
+      const currentCanvas = data.refs.currentCanvas.current
+      const marksCanvas = data.refs.marksCanvas.current
+
+      if (!frame || !currentCanvas || !marksCanvas) {
+        throw Error("Something is missing!")
+      }
+
       return {
-        frame: data.refs.frame.current,
-        currentCanvas: data.refs.currentCanvas.current,
-        marksCanvas: data.refs.marksCanvas.current,
+        frame,
+        currentCanvas,
+        marksCanvas,
       }
     },
   },
@@ -272,6 +288,9 @@ const state = createState({
     },
     hasRedos(data) {
       return data.redos.length > 0
+    },
+    hasFadingMarks(data) {
+      return !!data.marks.find((mark) => mark.strength <= 1)
     },
   },
   actions: {
@@ -286,6 +305,18 @@ const state = createState({
     removeFadedMarks(data) {
       data.marks = data.marks.filter((mark) => mark.strength > 0)
     },
+    // Pointer Capture
+    activate() {
+      const mainWindow = electron.remote.getCurrentWindow()
+      mainWindow.maximize()
+      mainWindow.setIgnoreMouseEvents(false, { forward: false })
+      document.body.style.setProperty("cursor", "none")
+    },
+    deactivate() {
+      const mainWindow = electron.remote.getCurrentWindow()
+      mainWindow.setIgnoreMouseEvents(true, { forward: true })
+      document.body.style.setProperty("cursor", "auto")
+    },
     // Setup
     clearRefs(data) {
       data.refs = undefined
@@ -293,34 +324,43 @@ const state = createState({
     setRefs(data, payload: Refs) {
       data.refs = payload
     },
-    activate() {
-      const mainWindow = electron.remote.getCurrentWindow()
-      mainWindow.maximize()
-      mainWindow.setIgnoreMouseEvents(false, { forward: false })
-    },
-    deactivate() {
-      const mainWindow = electron.remote.getCurrentWindow()
-      mainWindow.setIgnoreMouseEvents(true, { forward: true })
-    },
     setupCanvases(data, payload, elements: Elements) {
       {
         const cvs = elements.currentCanvas
         const ctx = cvs.getContext("2d")
-        ctx.lineCap = "round"
-        ctx.lineJoin = "round"
         ctx.globalCompositeOperation = "source-over"
+        ctx.save()
       }
+
       {
         const cvs = elements.marksCanvas
         const ctx = cvs.getContext("2d")
-        ctx.lineCap = "round"
-        ctx.lineJoin = "round"
+        ctx.save()
       }
     },
-    clearHistory(data, payload, elements: Elements) {
+    // Tools
+    setColorFromKey(data, payload: { index: number }) {
+      const { index } = payload
+      const keys = Object.values(defaultValues.colors)
+      if (keys[index]) {
+        data.color = keys[index]
+      }
+    },
+    setColor(data, payload) {
+      data.color = payload
+    },
+    setSize(data, payload) {
+      data.size = payload
+    },
+    // Marks
+    clearPreviousMarks(data, payload, elements: Elements) {
       data.marks = []
     },
-    handleResize(data, payload, elements: Elements) {
+    clearCurrentMark(data) {
+      data.currentMark = undefined
+    },
+    // Canvases
+    resizeCanvases(data, payload, elements: Elements) {
       data.canvasSize = {
         width: elements.frame.offsetWidth,
         height: elements.frame.offsetHeight,
@@ -330,15 +370,6 @@ const state = createState({
       elements.marksCanvas.height = data.canvasSize.height
       elements.currentCanvas.width = data.canvasSize.width
       elements.currentCanvas.height = data.canvasSize.height
-    },
-    setColor(data, payload) {
-      data.color = payload
-    },
-    setSize(data, payload) {
-      data.size = payload
-    },
-    clearCurrentMark(data) {
-      data.currentMark = undefined
     },
     clearCurrentCanvas(data, payload, elements: Elements) {
       const cvs = elements.currentCanvas
@@ -350,70 +381,86 @@ const state = createState({
       const ctx = cvs.getContext("2d")
       ctx.clearRect(0, 0, cvs.width, cvs.height)
     },
-    drawMarks(data, payload, elements: Elements) {
+    beginPencilMark(data, payload: { pressure: number }) {
+      const { x, y } = getPointer()
+      let p = payload.pressure || 1
+
+      data.currentMark = {
+        size: data.size,
+        color: data.color,
+        strength: 1 + data.fadeDelay,
+        eraser: false,
+        points: [x, y, x, y],
+      }
+    },
+    beginEraserMark(data, payload: { pressure: number }) {
+      const { x, y } = getPointer()
+
+      data.currentMark = {
+        size: data.size,
+        color: data.color,
+        eraser: true,
+        strength: 1 + data.fadeDelay,
+        points: [x, y, x, y],
+      }
+    },
+    addPointToMark(data, payload: { pressure: number }) {
+      const { x, y } = getPointer()
+      data.currentMark.points.push(x, y)
+    },
+    completeMark(data, payload: { pressure: number }) {
+      data.marks.push({
+        ...data.currentMark,
+        path: getPath(data.currentMark),
+      })
+    },
+    drawPreviousMarks(data, payload, elements: Elements) {
       // First clear the top canvas...
       const cvs = elements.marksCanvas
       const ctx = cvs.getContext("2d")
 
       if (ctx) {
         ctx.clearRect(0, 0, cvs.width, cvs.height)
+        ctx.globalCompositeOperation = "source-over"
         ctx.lineCap = "round"
         ctx.lineJoin = "round"
-        ctx.globalCompositeOperation = "source-over"
-
-        ctx.save()
 
         for (let mark of data.marks) {
-          drawMark(ctx, mark, "history")
+          ctx.strokeStyle = mark.color
+          ctx.lineWidth = mark.size
+          ctx.globalCompositeOperation = mark.eraser
+            ? "destination-out"
+            : "source-over"
+          ctx.globalAlpha = easeOutQuad(Math.min(1, mark.strength))
+          ctx.stroke(mark.path)
         }
-      }
-    },
-    beginPencilMark(data, payload) {
-      const { x, y } = payload
-      data.currentMark = {
-        size: data.size,
-        color: data.color,
-        strength: 1 + data.fadeDelay,
-        eraser: false,
-        points: [x, y, x, y, x, y, x, y],
-      }
-    },
-    beginEraserMark(data, payload) {
-      const { x, y } = payload
-      data.currentMark = {
-        size: data.size,
-        color: data.color,
-        eraser: true,
-        strength: 1 + data.fadeDelay,
-        points: [x, y, x, y, x, y, x, y],
       }
     },
     drawCurrentMark(data, payload, elements: Elements) {
+      const mark = data.currentMark
       const cvs = elements.currentCanvas
       const ctx = cvs.getContext("2d")
-      ctx.globalCompositeOperation = "source-over"
-
-      ctx.save()
-
       if (ctx) {
         ctx.clearRect(0, 0, cvs.width, cvs.height)
-        ctx.lineCap = "round"
-        ctx.lineJoin = "round"
 
-        // Draw current mark to the top canvas
         if (data.currentMark !== undefined) {
-          drawMark(ctx, data.currentMark, "current")
+          const path = getPath(mark)
+
+          ctx.lineCap = "round"
+          ctx.lineJoin = "round"
+          ctx.lineWidth = mark.size
+          ctx.strokeStyle = mark.color
+          ctx.globalCompositeOperation = "source-over"
+          if (mark.eraser) {
+            ctx.globalCompositeOperation = "destination-out"
+            ctx.strokeStyle = "rgba(144, 144, 144, 1)"
+          }
+
+          ctx.stroke(path)
         }
       }
     },
-    completeMark(data) {
-      data.currentMark.points = cSpline(data.currentMark.points)
-      data.marks.push(data.currentMark)
-    },
-    addPointToMark(data, payload) {
-      const { x, y } = payload
-      data.currentMark.points.push(x, y)
-    },
+    // Undos and redos
     undoMark(data) {
       data.redos.push(data.marks.pop())
     },
@@ -433,10 +480,6 @@ function drawMark(
   layer: "current" | "history"
 ) {
   ctx.beginPath()
-  ctx.lineWidth = mark.size
-  ctx.strokeStyle = mark.color
-  ctx.globalAlpha = easeOutQuad(Math.min(1, mark.strength))
-  ctx.globalCompositeOperation = "source-over"
 
   const pts = layer === "current" ? cSpline(mark.points) : mark.points
 
@@ -448,15 +491,33 @@ function drawMark(
     ctx.lineTo(rest[i], rest[i + 1])
   }
 
+  ctx.lineWidth = mark.size
+  ctx.strokeStyle = mark.color
+  ctx.globalCompositeOperation = "source-over"
   if (mark.eraser) {
     if (layer !== "current") {
       ctx.globalCompositeOperation = "destination-out"
     }
-    ctx.strokeStyle = `rgba(144, 144, 144, .9)`
+    ctx.strokeStyle = "rgba(144, 144, 144, 1)"
   }
-
   ctx.stroke()
   ctx.restore()
+}
+
+// Draw a mark onto the given canvas
+function getPath(mark: Mark) {
+  const [x, y, ...rest] = cSpline(mark.points)
+  const path = new Path2D()
+  path.moveTo(x, y)
+  for (let i = 0; i < rest.length - 1; i += 2) {
+    path.lineTo(rest[i], rest[i + 1])
+  }
+  return path
+}
+
+// Draw a mark onto the given canvas
+function drawCompleteMark(ctx: CanvasRenderingContext2D, mark: CompleteMark) {
+  // Draw Path
 }
 
 // state.onUpdate((update) => console.log(update.active, update.log[0]))
@@ -465,3 +526,12 @@ export const useSelector = createSelectorHook(state)
 export default state
 
 const easeOutQuad = (t: number) => t * (2 - t)
+
+export function getPointer() {
+  return {
+    x: mvPointer.x.get(),
+    y: mvPointer.y.get(),
+    dx: mvPointer.dx.get(),
+    dy: mvPointer.dy.get(),
+  }
+}

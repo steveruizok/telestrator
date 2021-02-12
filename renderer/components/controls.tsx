@@ -1,4 +1,3 @@
-import electron from "electron"
 import state, { useSelector } from "lib/state"
 import styled from "styled-components"
 import * as React from "react"
@@ -23,40 +22,6 @@ export default function Controls() {
   const selectedTool = useSelector((state) =>
     state.isIn("pencil") ? "pencil" : state.isIn("eraser") ? "eraser" : null
   )
-
-  // Deactivate when escape is pressed
-  React.useEffect(() => {
-    function releaseControl(e: KeyboardEvent) {
-      switch (e.key) {
-        case "z": {
-          if (e.metaKey) {
-            if (e.shiftKey) {
-              state.send("REDO")
-            } else {
-              state.send("UNDO")
-            }
-          }
-          break
-        }
-        case "e": {
-          if (e.metaKey) {
-            if (e.shiftKey) {
-              state.send("HARD_CLEARED")
-            }
-            state.send("SOFT_CLEARED")
-          }
-          break
-        }
-        case "Escape": {
-          state.send("DEACTIVATED")
-          break
-        }
-      }
-    }
-
-    document.addEventListener("keydown", releaseControl)
-    return () => document.removeEventListener("keydown", releaseControl)
-  }, [])
 
   return (
     <ControlsContainer
@@ -117,8 +82,8 @@ export default function Controls() {
 }
 
 const ControlsContainer = styled.div<{ showActive: boolean }>`
+  cursor: none !important;
   overflow: hidden;
-  cursor: pointer;
   position: absolute;
   bottom: 0;
   left: 0;
@@ -135,6 +100,10 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   transform: ${({ showActive }) =>
     showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
 
+  & * {
+    cursor: none !important;
+  }
+
   :hover {
     opacity: 1;
     transform: translate(0px, 0px);
@@ -142,7 +111,6 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   }
 
   button {
-    cursor: pointer;
     position: relative;
     outline: none;
     z-index: 2;
@@ -165,7 +133,6 @@ const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
   border: none;
   padding: 0;
   font-weight: bold;
-  cursor: pointer;
   background-color: transparent;
   display: flex;
   align-items: center;
@@ -207,8 +174,8 @@ const SizeButton = styled.button<{
     position: absolute;
     top: 0;
     left: 8px;
+    right: 8px;
     height: 100%;
-    width: 100%;
     transform: scale(0.85);
     transition: all 0.16s;
     z-index: -1;
@@ -221,6 +188,7 @@ const SizeButton = styled.button<{
   }
 
   &:hover {
+    opacity: 1;
     color: #fff;
   }
 
@@ -236,11 +204,6 @@ const SizeButton = styled.button<{
 
   &:hover:after {
     transform: scale(1);
-  }
-
-  &:hover {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
   }
 `
 

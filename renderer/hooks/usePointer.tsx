@@ -1,64 +1,53 @@
 import * as React from "react"
-import { useMotionValue } from "framer-motion"
+import { MotionValue, motionValue } from "framer-motion"
+
+interface MotionPointer {
+  x: MotionValue<number>
+  y: MotionValue<number>
+  dx: MotionValue<number>
+  dy: MotionValue<number>
+}
+export const mvPointer: MotionPointer = {
+  x: motionValue(0),
+  y: motionValue(0),
+  dx: motionValue(0),
+  dy: motionValue(0),
+}
+
+interface PointerInfo {
+  x: number
+  y: number
+  dx: number
+  dy: number
+}
 
 export default function usePointer(
-  ref: React.RefObject<any>,
-  onMove = ({
-    dx,
-    dy,
-    x,
-    y,
-  }: {
-    dx: number
-    dy: number
-    x: number
-    y: number
-  }) => {}
+  onMove = ({ dx, dy, x, y }: PointerInfo) => {}
 ) {
-  const mvX = useMotionValue(0)
-  const mvY = useMotionValue(0)
-  const mvDX = useMotionValue(0)
-  const mvDY = useMotionValue(0)
-
-  const rOffset = React.useRef({
-    left: 0,
-    top: 0,
-  })
-
-  React.useEffect(() => {
-    function updateBoundingBox() {
-      const { left, top } = ref.current.getBoundingClientRect()
-      rOffset.current = { left, top }
-    }
-
-    let timeout = setInterval(updateBoundingBox, 1000)
-    return () => clearInterval(timeout)
-  }, [])
-
   React.useEffect(() => {
     function updateMotionValues(e: PointerEvent) {
-      const { left, top } = rOffset.current
-      const x = e.pageX - left,
-        y = e.pageY - top
+      const x = e.pageX,
+        y = e.pageY
 
-      mvDX.set(x - mvX.get())
-      mvDY.set(y - mvY.get())
-      mvX.set(x)
-      mvY.set(y)
+      const dx = x - mvPointer.x.get()
+      const dy = y - mvPointer.y.get()
+
+      if (Math.hypot(dx, dy) < 8) {
+        return
+      }
+
+      mvPointer.x.set(x)
+      mvPointer.y.set(y)
+      mvPointer.dx.set(dx)
+      mvPointer.dy.set(dy)
 
       if (onMove) {
-        onMove({
-          dx: mvDX.get(),
-          dy: mvDY.get(),
-          x: mvX.get(),
-          y: mvY.get(),
-        })
+        onMove({ x, y, dx, dy })
       }
     }
-
     window.addEventListener("pointermove", updateMotionValues)
     return () => window.removeEventListener("pointermove", updateMotionValues)
   }, [])
 
-  return { x: mvX, y: mvY, dx: mvDX, dy: mvDY }
+  return mvPointer
 }
