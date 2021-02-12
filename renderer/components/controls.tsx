@@ -8,24 +8,39 @@ import {
   MinusCircle,
   Settings,
   CornerUpLeft,
+  Circle,
+  Square,
+  ArrowDownLeft,
   CornerUpRight,
 } from "react-feather"
 
 export default function Controls() {
-  const showActive = useSelector((state) =>
-    state.isInAny("active", "selecting")
-  )
+  const hideActive = useSelector((state) => state.isIn("drawing"))
+  // const showActive = useSelector((state) =>
+  //   state.isInAny("active", "selecting")
+  // )
   const selectedSize = useSelector((state) => state.data.size)
   const selectedColor = useSelector((state) => state.data.color)
-  const canUndo = useSelector((state) => state.can("UNDO"))
-  const canRedo = useSelector((state) => state.can("REDO"))
+  // const canUndo = useSelector((state) => state.can("UNDO"))
+  // const canRedo = useSelector((state) => state.can("REDO"))
   const selectedTool = useSelector((state) =>
-    state.isIn("pencil") ? "pencil" : state.isIn("eraser") ? "eraser" : null
+    state.isIn("pencil")
+      ? "pencil"
+      : state.isIn("rect")
+      ? "rect"
+      : state.isIn("ellipse")
+      ? "ellipse"
+      : state.isIn("eraser")
+      ? "eraser"
+      : state.isIn("arrow")
+      ? "arrow"
+      : null
   )
 
   return (
     <ControlsContainer
-      showActive={showActive}
+      data-hide={hideActive}
+      showActive={false}
       onMouseOver={() => state.send("ENTERED_CONTROLS")}
       onMouseLeave={() => state.send("LEFT_CONTROLS")}
       onMouseDown={() => state.send("SELECTED")}
@@ -47,12 +62,13 @@ export default function Controls() {
           color={selectedColor}
         />
       ))}
-      <ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
+      {/* <ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
         <CornerUpLeft />
       </ToolButton>
       <ToolButton disabled={!canRedo} onClick={() => state.send("REDO")}>
         <CornerUpRight />
-      </ToolButton>
+      </ToolButton> */}
+
       <ToolButton
         isSelected={selectedTool === "pencil"}
         onClick={() => state.send("SELECTED_PENCIL")}
@@ -60,20 +76,33 @@ export default function Controls() {
         <Edit2 size={24} />
       </ToolButton>
       <ToolButton
+        isSelected={selectedTool === "arrow"}
+        onClick={() => state.send("SELECTED_ARROW")}
+      >
+        <ArrowDownLeft size={24} />
+      </ToolButton>
+      <ToolButton
+        isSelected={selectedTool === "rect"}
+        onClick={() => state.send("SELECTED_RECT")}
+      >
+        <Square />
+      </ToolButton>
+      <ToolButton
+        isSelected={selectedTool === "ellipse"}
+        onClick={() => state.send("SELECTED_ELLIPSE")}
+      >
+        <Circle />
+      </ToolButton>
+      {/* <ToolButton
         isSelected={selectedTool === "eraser"}
         onClick={() => state.send("SELECTED_ERASER")}
         onDoubleClick={() => state.send("MEDIUM_CLEARED")}
       >
         <MinusCircle size={24} />
-      </ToolButton>
-      <ToolButton
-        onPointerEnter={() => state.send("ENTERED_DRAGGING")}
-        onPointerLeave={() => state.send("LEFT_DRAGGING")}
-        onPointerDown={() => state.send("STARTED_DRAGGING")}
-        onPointerUp={() => state.send("STOPPED_DRAGGING")}
-      >
+      </ToolButton> */}
+      {/* <ToolButton>
         <Settings size={24} />
-      </ToolButton>
+      </ToolButton> */}
       <ToolButton onClick={() => state.send("DEACTIVATED")}>
         <X size={24} />
       </ToolButton>
@@ -102,6 +131,10 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
 
   & * {
     cursor: none !important;
+  }
+
+  &[data-hide="true"] {
+    pointer-events: none;
   }
 
   :hover {

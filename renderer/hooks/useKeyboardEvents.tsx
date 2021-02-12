@@ -5,6 +5,13 @@ export default function useKeyboardEvents() {
   useEffect(() => {
     function releaseControl(e: KeyboardEvent) {
       switch (e.key) {
+        case "Shift": {
+          state.send("TOGGLED_ASPECT_LOCK")
+          break
+        }
+        case "Meta": {
+          state.send("TOGGLED_FILL")
+        }
         case "1":
         case "2":
         case "3":
@@ -15,8 +22,25 @@ export default function useKeyboardEvents() {
           state.send("CHANGED_COLOR_KEY", { index: Number(e.key) - 1 })
           break
         }
+        case "d":
         case "p": {
           state.send("SELECTED_PENCIL")
+          break
+        }
+        case "a": {
+          state.send("SELECTED_ARROW")
+          break
+        }
+        case "r": {
+          state.send("SELECTED_RECT")
+          break
+        }
+        case "e": {
+          if (e.metaKey) {
+            state.send("SOFT_CLEARED")
+          } else {
+            state.send("SELECTED_ELLIPSE")
+          }
           break
         }
         case "e": {

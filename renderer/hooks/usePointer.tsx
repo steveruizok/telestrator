@@ -32,9 +32,9 @@ export default function usePointer(
       const dx = x - mvPointer.x.get()
       const dy = y - mvPointer.y.get()
 
-      if (Math.hypot(dx, dy) < 8) {
-        return
-      }
+      // if (Math.hypot(dx, dy) < 8) {
+      //   return
+      // }
 
       mvPointer.x.set(x)
       mvPointer.y.set(y)

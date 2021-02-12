@@ -17,11 +17,12 @@ if (isProd) {
     width: 1000,
     height: 600,
     transparent: true,
-    false: false,
+    frame: false,
     titleBarStyle: "customButtonsOnHover",
     webPreferences: { enableRemoteModule: true },
     hasShadow: false,
     fullscreenable: false,
+    title: "Telestrator",
   })
 
   mainWindow.maximize()

@@ -5,7 +5,16 @@ import cSpline from "cardinal-spline"
 import { mvPointer } from "hooks/usePointer"
 import * as defaultValues from "lib/defaults"
 
+enum MarkType {
+  Freehand = "freehand",
+  Ruled = "ruled",
+  Ellipse = "ellipse",
+  Rect = "rect",
+  Arrow = "arrow",
+}
+
 interface Mark {
+  type: MarkType
   size: number
   color: string
   eraser: boolean
@@ -14,6 +23,7 @@ interface Mark {
 }
 
 interface CompleteMark {
+  type: MarkType
   size: number
   color: string
   eraser: boolean
@@ -46,6 +56,9 @@ const state = createState({
       width: 0,
       height: 0,
     },
+    circle: undefined as Mark | undefined,
+    square: undefined as Mark | undefined,
+    arrow: undefined as Mark | undefined,
   },
   on: {
     SELECTED_COLOR: "setColor",
@@ -158,6 +171,11 @@ const state = createState({
                       ],
                       to: ["pencil"],
                     },
+                    SELECTED_PENCIL: { to: "pencil" },
+                    SELECTED_RECT: { to: "rect" },
+                    SELECTED_ARROW: { to: "arrow" },
+                    SELECTED_ELLIPSE: { to: "ellipse" },
+                    SELECTED_ERASER: { to: "eraser" },
                   },
                   initial: "pencil",
                   states: {
@@ -167,7 +185,30 @@ const state = createState({
                           get: "elements",
                           do: ["beginPencilMark", "drawCurrentMark"],
                         },
-                        SELECTED_ERASER: { to: "eraser" },
+                      },
+                    },
+                    rect: {
+                      on: {
+                        STARTED_DRAWING: {
+                          get: "elements",
+                          do: ["beginRectMark", "drawCurrentMark"],
+                        },
+                      },
+                    },
+                    ellipse: {
+                      on: {
+                        STARTED_DRAWING: {
+                          get: "elements",
+                          do: ["beginEllipseMark", "drawCurrentMark"],
+                        },
+                      },
+                    },
+                    arrow: {
+                      on: {
+                        STARTED_DRAWING: {
+                          get: "elements",
+                          do: ["beginArrowMark", "drawCurrentMark"],
+                        },
                       },
                     },
                     eraser: {
@@ -177,8 +218,6 @@ const state = createState({
                           secretlyDo: ["beginEraserMark", "drawCurrentMark"],
                         },
                         SELECTED_COLOR: { to: "pencil" },
-                        SELECTED_PENCIL: { to: "pencil" },
-                        SELECTED_ERASER: { to: "pencil" },
                       },
                     },
                   },
@@ -225,12 +264,7 @@ const state = createState({
         noMarks: {
           onEnter: {
             get: "elements",
-            secretlyDo: [
-              "clearPreviousMarks",
-              "clearCurrentMark",
-              "clearCurrentCanvas",
-              "clearMarksCanvas",
-            ],
+            secretlyDo: ["clearPreviousMarks", "clearMarksCanvas"],
           },
         },
         hasMarks: {
@@ -241,7 +275,7 @@ const state = createState({
           repeat: {
             onRepeat: [
               {
-                unless: "hasMarks",
+                unless: ["hasMarks", "hasCurrentMark"],
                 to: "noMarks",
                 else: [
                   {
@@ -282,6 +316,9 @@ const state = createState({
   conditions: {
     fadingEnabled(data) {
       return data.isFading
+    },
+    hasCurrentMark(data) {
+      return !!data.currentMark
     },
     hasMarks(data) {
       return data.marks.length > 0
@@ -386,6 +423,7 @@ const state = createState({
       let p = payload.pressure || 1
 
       data.currentMark = {
+        type: MarkType.Freehand,
         size: data.size,
         color: data.color,
         strength: 1 + data.fadeDelay,
@@ -397,6 +435,7 @@ const state = createState({
       const { x, y } = getPointer()
 
       data.currentMark = {
+        type: MarkType.Freehand,
         size: data.size,
         color: data.color,
         eraser: true,
@@ -404,14 +443,86 @@ const state = createState({
         points: [x, y, x, y],
       }
     },
-    addPointToMark(data, payload: { pressure: number }) {
+    beginRectMark(data, payload: { pressure: number }) {
       const { x, y } = getPointer()
-      data.currentMark.points.push(x, y)
+
+      data.currentMark = {
+        type: MarkType.Rect,
+        size: data.size,
+        color: data.color,
+        eraser: false,
+        strength: 1 + data.fadeDelay,
+        points: [x, y, x, y],
+      }
+    },
+    beginEllipseMark(data, payload: { pressure: number }) {
+      const { x, y } = getPointer()
+
+      data.currentMark = {
+        type: MarkType.Ellipse,
+        size: data.size,
+        color: data.color,
+        eraser: false,
+        strength: 1 + data.fadeDelay,
+        points: [x, y, x, y],
+      }
+    },
+    beginArrowMark(data, payload: { pressure: number }) {
+      const { x, y } = getPointer()
+
+      data.currentMark = {
+        type: MarkType.Arrow,
+        size: data.size,
+        color: data.color,
+        eraser: false,
+        strength: 1 + data.fadeDelay,
+        points: [x, y, x, y],
+      }
+    },
+    addPointToMark(data, payload: { pressure: number }) {
+      const { points, type } = data.currentMark
+      const { x, y } = getPointer()
+
+      switch (type) {
+        case MarkType.Freehand: {
+          points.push(x, y)
+          break
+        }
+        case MarkType.Arrow:
+        case MarkType.Ellipse:
+        case MarkType.Rect: {
+          points[2] = x
+          points[3] = y
+          break
+        }
+      }
     },
     completeMark(data, payload: { pressure: number }) {
+      const { type } = data.currentMark
+      let path: Path2D
+
+      switch (type) {
+        case MarkType.Freehand: {
+          path = getFreehandPath(data.currentMark)
+          break
+        }
+        case MarkType.Ellipse: {
+          path = getEllipsePath(data.currentMark)
+          break
+        }
+        case MarkType.Rect: {
+          path = getRectPath(data.currentMark)
+          break
+        }
+        case MarkType.Arrow: {
+          path = getArrowPath(data.currentMark)
+          break
+        }
+      }
+
       data.marks.push({
         ...data.currentMark,
-        path: getPath(data.currentMark),
+        path,
       })
     },
     drawPreviousMarks(data, payload, elements: Elements) {
@@ -443,21 +554,43 @@ const state = createState({
       if (ctx) {
         ctx.clearRect(0, 0, cvs.width, cvs.height)
 
-        if (data.currentMark !== undefined) {
-          const path = getPath(mark)
+        if (mark === undefined) return
 
-          ctx.lineCap = "round"
-          ctx.lineJoin = "round"
-          ctx.lineWidth = mark.size
-          ctx.strokeStyle = mark.color
-          ctx.globalCompositeOperation = "source-over"
-          if (mark.eraser) {
-            ctx.globalCompositeOperation = "destination-out"
-            ctx.strokeStyle = "rgba(144, 144, 144, 1)"
+        const { type } = mark
+
+        let path: Path2D
+
+        switch (type) {
+          case MarkType.Freehand: {
+            path = getFreehandPath(data.currentMark)
+            break
           }
-
-          ctx.stroke(path)
+          case MarkType.Ellipse: {
+            path = getEllipsePath(data.currentMark)
+            break
+          }
+          case MarkType.Rect: {
+            path = getRectPath(data.currentMark)
+            break
+          }
+          case MarkType.Arrow: {
+            path = getArrowPath(data.currentMark)
+            break
+          }
         }
+
+        ctx.lineCap = "round"
+        ctx.lineJoin = "round"
+        ctx.lineWidth = mark.size
+        ctx.fillStyle = mark.color
+        ctx.strokeStyle = mark.color
+        ctx.globalCompositeOperation = "source-over"
+        if (mark.eraser) {
+          ctx.globalCompositeOperation = "destination-out"
+          ctx.strokeStyle = "rgba(144, 144, 144, 1)"
+        }
+
+        ctx.stroke(path)
       }
     },
     // Undos and redos
@@ -474,39 +607,9 @@ const state = createState({
 })
 
 // Draw a mark onto the given canvas
-function drawMark(
-  ctx: CanvasRenderingContext2D,
-  mark: Mark,
-  layer: "current" | "history"
-) {
-  ctx.beginPath()
-
-  const pts = layer === "current" ? cSpline(mark.points) : mark.points
-
-  const [x, y, ...rest] = pts
-
-  ctx.moveTo(x, y)
-
-  for (let i = 0; i < rest.length - 1; i += 2) {
-    ctx.lineTo(rest[i], rest[i + 1])
-  }
-
-  ctx.lineWidth = mark.size
-  ctx.strokeStyle = mark.color
-  ctx.globalCompositeOperation = "source-over"
-  if (mark.eraser) {
-    if (layer !== "current") {
-      ctx.globalCompositeOperation = "destination-out"
-    }
-    ctx.strokeStyle = "rgba(144, 144, 144, 1)"
-  }
-  ctx.stroke()
-  ctx.restore()
-}
-
-// Draw a mark onto the given canvas
-function getPath(mark: Mark) {
+function getFreehandPath(mark: Mark) {
   const [x, y, ...rest] = cSpline(mark.points)
+
   const path = new Path2D()
   path.moveTo(x, y)
   for (let i = 0; i < rest.length - 1; i += 2) {
@@ -515,12 +618,89 @@ function getPath(mark: Mark) {
   return path
 }
 
-// Draw a mark onto the given canvas
-function drawCompleteMark(ctx: CanvasRenderingContext2D, mark: CompleteMark) {
-  // Draw Path
+function getRectPath(mark: Mark) {
+  const { points } = mark
+  const x0 = Math.min(points[0], points[2])
+  const y0 = Math.min(points[1], points[3])
+  const x1 = Math.max(points[0], points[2])
+  const y1 = Math.max(points[1], points[3])
+
+  const path = new Path2D()
+  path.rect(x0, y0, x1 - x0, y1 - y0)
+  return path
 }
 
-// state.onUpdate((update) => console.log(update.active, update.log[0]))
+function getEllipsePath(mark: Mark) {
+  const { points } = mark
+  const x0 = Math.min(points[0], points[2])
+  const y0 = Math.min(points[1], points[3])
+  const x1 = Math.max(points[0], points[2])
+  const y1 = Math.max(points[1], points[3])
+  const w = x1 - x0
+  const h = y1 - y0
+  const cx = x0 + w / 2
+  const cy = y0 + h / 2
+
+  const path = new Path2D()
+  path.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2)
+  return path
+}
+
+function getArrowPath(mark: Mark) {
+  const { points } = mark
+  const [x0, y0, x1, y1] = points
+  const angle = Math.atan2(y1 - y0, x1 - x0)
+  const distance = Math.hypot(y1 - y0, x1 - x0)
+  const leg = Math.min(distance / 2, 48)
+  const [x2, y2] = projectPoint(x1, y1, angle + Math.PI * 1.2, leg)
+  const [x3, y3] = projectPoint(x1, y1, angle - Math.PI * 1.2, leg)
+
+  const path = new Path2D()
+  path.moveTo(x0, y0)
+  path.lineTo(x1, y1)
+  path.lineTo(x2, y2)
+  path.moveTo(x1, y1)
+  path.lineTo(x3, y3)
+  return path
+}
+
+// // Draw a mark onto the given canvas
+// function drawMark(
+//   ctx: CanvasRenderingContext2D,
+//   mark: Mark,
+//   layer: "current" | "history"
+// ) {
+//   ctx.beginPath()
+
+//   const pts = layer === "current" ? cSpline(mark.points) : mark.points
+
+//   const [x, y, ...rest] = pts
+
+//   ctx.moveTo(x, y)
+
+//   for (let i = 0; i < rest.length - 1; i += 2) {
+//     ctx.lineTo(rest[i], rest[i + 1])
+//   }
+
+//   ctx.lineWidth = mark.size
+//   ctx.strokeStyle = mark.color
+//   ctx.globalCompositeOperation = "source-over"
+//   if (mark.eraser) {
+//     if (layer !== "current") {
+//       ctx.globalCompositeOperation = "destination-out"
+//     }
+//     ctx.strokeStyle = "rgba(144, 144, 144, 1)"
+//   }
+//   ctx.stroke()
+//   ctx.restore()
+// }
+
+// // Draw a mark onto the given canvas
+// function drawCompleteMark(ctx: CanvasRenderingContext2D, mark: CompleteMark) {
+//   // Draw Path
+// }
+
+state.onUpdate((update) => console.log(update.active, update.log[0]))
 
 export const useSelector = createSelectorHook(state)
 export default state
@@ -534,4 +714,15 @@ export function getPointer() {
     dx: mvPointer.dx.get(),
     dy: mvPointer.dy.get(),
   }
+}
+
+/**
+ * Move a point in an angle by a distance.
+ * @param x0
+ * @param y0
+ * @param a angle (radians)
+ * @param d distance
+ */
+export function projectPoint(x0: number, y0: number, a: number, d: number) {
+  return [Math.cos(a) * d + x0, Math.sin(a) * d + y0]
 }
