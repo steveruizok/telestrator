@@ -11,6 +11,8 @@ import {
   Circle,
   Square,
   ArrowDownLeft,
+  Lock,
+  Unlock,
   CornerUpRight,
 } from "react-feather"
 
@@ -19,6 +21,7 @@ export default function Controls() {
   // const showActive = useSelector((state) =>
   //   state.isInAny("active", "selecting")
   // )
+  const isFading = useSelector((state) => state.data.isFading)
   const selectedSize = useSelector((state) => state.data.size)
   const selectedColor = useSelector((state) => state.data.color)
   // const canUndo = useSelector((state) => state.can("UNDO"))
@@ -92,6 +95,9 @@ export default function Controls() {
         onClick={() => state.send("SELECTED_ELLIPSE")}
       >
         <Circle />
+      </ToolButton>
+      <ToolButton onClick={() => state.send("TOGGLED_FADING")}>
+        {isFading ? <Unlock /> : <Lock />}
       </ToolButton>
       {/* <ToolButton
         isSelected={selectedTool === "eraser"}

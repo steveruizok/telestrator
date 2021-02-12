@@ -260,17 +260,44 @@ const state = createState({
     marks: {
       initial: "noMarks",
       states: {
-        notFading: {},
+        notFading: {
+          on: {
+            TOGGLED_FADING: {
+              do: "toggleFading",
+              to: "hasMarks",
+            },
+          },
+        },
         noMarks: {
+          on: {
+            TOGGLED_FADING: { do: "toggleFading", to: "notFading" },
+          },
           onEnter: {
             get: "elements",
             secretlyDo: ["clearPreviousMarks", "clearMarksCanvas"],
           },
         },
         hasMarks: {
-          onEnter: {
-            unless: "fadingEnabled",
-            to: "notFading",
+          onEnter: [
+            {
+              unless: "fadingEnabled",
+              to: "notFading",
+            },
+            {
+              unless: "hasMarks",
+              to: "noMarks",
+            },
+          ],
+          on: {
+            TOGGLED_FADING: {
+              get: "elements",
+              secretlyDo: [
+                "toggleFading",
+                "clearMarksCanvas",
+                "drawPreviousMarks",
+              ],
+              to: "notFading",
+            },
           },
           repeat: {
             onRepeat: [
@@ -332,6 +359,14 @@ const state = createState({
   },
   actions: {
     // Fading
+    toggleFading(data) {
+      data.isFading = !data.isFading
+      if (!data.isFading) {
+        for (let mark of data.marks) {
+          mark.strength = 1
+        }
+      }
+    },
     fadeMarks(data) {
       const { fadeDuration } = data
       const delta = 0.016 / fadeDuration
@@ -651,7 +686,7 @@ function getArrowPath(mark: Mark) {
   const [x0, y0, x1, y1] = points
   const angle = Math.atan2(y1 - y0, x1 - x0)
   const distance = Math.hypot(y1 - y0, x1 - x0)
-  const leg = Math.min(distance / 2, 48)
+  const leg = (Math.min(distance / 2, 48) * mark.size) / 16
   const [x2, y2] = projectPoint(x1, y1, angle + Math.PI * 1.2, leg)
   const [x3, y3] = projectPoint(x1, y1, angle - Math.PI * 1.2, leg)
 

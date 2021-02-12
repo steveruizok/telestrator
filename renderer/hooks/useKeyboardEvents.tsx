@@ -22,6 +22,11 @@ export default function useKeyboardEvents() {
           state.send("CHANGED_COLOR_KEY", { index: Number(e.key) - 1 })
           break
         }
+        case "f": {
+          if (e.metaKey) {
+            state.send("TOGGLED_FADING")
+          }
+        }
         case "d":
         case "p": {
           state.send("SELECTED_PENCIL")
