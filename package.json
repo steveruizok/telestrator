@@ -2,7 +2,7 @@
   "private": true,
   "name": "telestrator",
   "description": "A drawing app for streaming.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Steve Ruiz @steveruizok",
   "main": "app/background.js",
   "scripts": {
