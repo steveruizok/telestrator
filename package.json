@@ -7,8 +7,13 @@
   "main": "app/background.js",
   "scripts": {
     "dev": "nextron",
+    "postinstall": "electron-builder install-app-deps",
     "build": "nextron build",
-    "postinstall": "electron-builder install-app-deps"
+    "build:all": "nextron build --all",
+    "build:win32": "nextron build --win --ia32",
+    "build:win64": "nextron build --win --x64",
+    "build:mac": "nextron build --mac --x64",
+    "build:linux": "nextron build --linux"
   },
   "dependencies": {
     "@state-designer/react": "^1.4.5",

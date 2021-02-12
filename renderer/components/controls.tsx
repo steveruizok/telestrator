@@ -1,4 +1,3 @@
-import electron from "electron"
 import state, { useSelector } from "lib/state"
 import styled from "styled-components"
 import * as React from "react"
@@ -6,39 +5,36 @@ import { colors, sizes } from "lib/defaults"
 import {
   X,
   Edit2,
-  MinusCircle,
-  Move,
-  CornerUpLeft,
-  CornerUpRight,
+  Circle,
+  Square,
+  ArrowDownLeft,
+  Lock,
+  Unlock,
 } from "react-feather"
 
 export default function Controls() {
-  const showActive = useSelector((state) =>
-    state.isInAny("active", "selecting")
-  )
+  const hideActive = useSelector((state) => state.isIn("drawing"))
+  const isFading = useSelector((state) => state.data.isFading)
   const selectedSize = useSelector((state) => state.data.size)
   const selectedColor = useSelector((state) => state.data.color)
-  const canUndo = useSelector((state) => state.can("UNDO"))
-  const canRedo = useSelector((state) => state.can("REDO"))
   const selectedTool = useSelector((state) =>
-    state.isIn("pencil") ? "pencil" : state.isIn("eraser") ? "eraser" : null
+    state.isIn("pencil")
+      ? "pencil"
+      : state.isIn("rect")
+      ? "rect"
+      : state.isIn("ellipse")
+      ? "ellipse"
+      : state.isIn("eraser")
+      ? "eraser"
+      : state.isIn("arrow")
+      ? "arrow"
+      : null
   )
-
-  // Deactivate when escape is pressed
-  React.useEffect(() => {
-    function releaseControl(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        state.send("DEACTIVATED")
-      }
-    }
-
-    document.addEventListener("keydown", releaseControl)
-    return () => document.removeEventListener("keydown", releaseControl)
-  }, [])
 
   return (
     <ControlsContainer
-      showActive={showActive}
+      data-hide={hideActive}
+      showActive={false}
       onMouseOver={() => state.send("ENTERED_CONTROLS")}
       onMouseLeave={() => state.send("LEFT_CONTROLS")}
       onMouseDown={() => state.send("SELECTED")}
@@ -60,12 +56,6 @@ export default function Controls() {
           color={selectedColor}
         />
       ))}
-      <ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
-        <CornerUpLeft />
-      </ToolButton>
-      <ToolButton disabled={!canRedo} onClick={() => state.send("REDO")}>
-        <CornerUpRight />
-      </ToolButton>
       <ToolButton
         isSelected={selectedTool === "pencil"}
         onClick={() => state.send("SELECTED_PENCIL")}
@@ -73,19 +63,25 @@ export default function Controls() {
         <Edit2 size={24} />
       </ToolButton>
       <ToolButton
-        isSelected={selectedTool === "eraser"}
-        onClick={() => state.send("SELECTED_ERASER")}
-        onDoubleClick={() => state.send("CLEARED_MARKS")}
+        isSelected={selectedTool === "arrow"}
+        onClick={() => state.send("SELECTED_ARROW")}
       >
-        <MinusCircle size={24} />
+        <ArrowDownLeft size={24} />
       </ToolButton>
       <ToolButton
-        onPointerEnter={() => state.send("ENTERED_DRAGGING")}
-        onPointerLeave={() => state.send("LEFT_DRAGGING")}
-        onPointerDown={() => state.send("STARTED_DRAGGING")}
-        onPointerUp={() => state.send("STOPPED_DRAGGING")}
+        isSelected={selectedTool === "rect"}
+        onClick={() => state.send("SELECTED_RECT")}
       >
-        <Move size={24} />
+        <Square />
+      </ToolButton>
+      <ToolButton
+        isSelected={selectedTool === "ellipse"}
+        onClick={() => state.send("SELECTED_ELLIPSE")}
+      >
+        <Circle />
+      </ToolButton>
+      <ToolButton onClick={() => state.send("TOGGLED_FADING")}>
+        {isFading ? <Unlock /> : <Lock />}
       </ToolButton>
       <ToolButton onClick={() => state.send("DEACTIVATED")}>
         <X size={24} />
@@ -95,7 +91,8 @@ export default function Controls() {
 }
 
 const ControlsContainer = styled.div<{ showActive: boolean }>`
-  cursor: pointer;
+  cursor: none !important;
+  overflow: hidden;
   position: absolute;
   bottom: 0;
   left: 0;
@@ -104,13 +101,21 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   display: grid;
   grid-template-columns: 1fr;
   grid-auto-rows: 40px;
-  padding: 8px;
+  padding: 8px 0px;
   opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
   transition: all 0.25s;
   border-radius: 2px 20px 0 0;
   background-color: rgba(144, 144, 144, 0);
   transform: ${({ showActive }) =>
     showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
+
+  & * {
+    cursor: none !important;
+  }
+
+  &[data-hide="true"] {
+    pointer-events: none;
+  }
 
   :hover {
     opacity: 1;
@@ -119,19 +124,21 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   }
 
   button {
-    cursor: pointer;
     position: relative;
     outline: none;
     z-index: 2;
-    border-radius: 100%;
+    padding: 0 8px;
     border: none;
-    padding: 0;
     background-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
     color: rgb(144, 144, 144, 1);
+
+    &:hover {
+      /* background-color: rgba(144, 144, 144, 0.1); */
+    }
   }
 `
 
@@ -139,12 +146,12 @@ const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
   border: none;
   padding: 0;
   font-weight: bold;
-  cursor: pointer;
   background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   outline: none;
+  padding-left: 8px;
 
   &::after {
     content: "";
@@ -179,9 +186,9 @@ const SizeButton = styled.button<{
     border-radius: 100%;
     position: absolute;
     top: 0;
-    left: 0;
+    left: 8px;
+    right: 8px;
     height: 100%;
-    width: 100%;
     transform: scale(0.85);
     transition: all 0.16s;
     z-index: -1;
@@ -194,6 +201,7 @@ const SizeButton = styled.button<{
   }
 
   &:hover {
+    opacity: 1;
     color: #fff;
   }
 
@@ -209,11 +217,6 @@ const SizeButton = styled.button<{
 
   &:hover:after {
     transform: scale(1);
-  }
-
-  &:hover {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
   }
 `
 
@@ -238,9 +241,9 @@ const ToolButton = styled.button<{
     border-radius: 100%;
     position: absolute;
     top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
+    left: 8px;
+    height: 40px;
+    width: 40px;
     transform: scale(0.85);
     transition: all 0.16s;
     z-index: -1;
@@ -252,3 +255,25 @@ const ToolButton = styled.button<{
     background-color: rgba(144, 144, 144, 0.2);
   }
 `
+
+/* 
+const canUndo = useSelector((state) => state.can("UNDO"))
+const canRedo = useSelector((state) => state.can("REDO"))
+
+<ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
+  <CornerUpLeft />
+</ToolButton>
+<ToolButton disabled={!canRedo} onClick={() => state.send("REDO")}>
+  <CornerUpRight />
+</ToolButton>
+<ToolButton
+  isSelected={selectedTool === "eraser"}
+  onClick={() => state.send("SELECTED_ERASER")}
+  onDoubleClick={() => state.send("MEDIUM_CLEARED")}
+>
+  <MinusCircle size={24} />
+</ToolButton> 
+<ToolButton>
+  <Settings size={24} />
+</ToolButton> 
+*/
