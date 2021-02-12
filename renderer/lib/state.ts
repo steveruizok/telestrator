@@ -105,6 +105,7 @@ const state = createState({
               on: {
                 DEACTIVATED: { to: "inactive" },
                 CHANGED_COLOR_KEY: { do: "setColorFromKey" },
+                CHANGED_SIZE_KEY: { do: "setSizeFromKey" },
                 UNDO: {
                   get: "elements",
                   if: "hasMarks",
@@ -418,6 +419,13 @@ const state = createState({
         data.color = keys[index]
       }
     },
+    setSizeFromKey(data, payload: { index: number }) {
+      const { index } = payload
+      const keys = Object.values(defaultValues.sizes)
+      if (keys[index]) {
+        data.size = keys[index]
+      }
+    },
     setColor(data, payload) {
       data.color = payload
     },
@@ -699,47 +707,6 @@ function getArrowPath(mark: Mark) {
   return path
 }
 
-// // Draw a mark onto the given canvas
-// function drawMark(
-//   ctx: CanvasRenderingContext2D,
-//   mark: Mark,
-//   layer: "current" | "history"
-// ) {
-//   ctx.beginPath()
-
-//   const pts = layer === "current" ? cSpline(mark.points) : mark.points
-
-//   const [x, y, ...rest] = pts
-
-//   ctx.moveTo(x, y)
-
-//   for (let i = 0; i < rest.length - 1; i += 2) {
-//     ctx.lineTo(rest[i], rest[i + 1])
-//   }
-
-//   ctx.lineWidth = mark.size
-//   ctx.strokeStyle = mark.color
-//   ctx.globalCompositeOperation = "source-over"
-//   if (mark.eraser) {
-//     if (layer !== "current") {
-//       ctx.globalCompositeOperation = "destination-out"
-//     }
-//     ctx.strokeStyle = "rgba(144, 144, 144, 1)"
-//   }
-//   ctx.stroke()
-//   ctx.restore()
-// }
-
-// // Draw a mark onto the given canvas
-// function drawCompleteMark(ctx: CanvasRenderingContext2D, mark: CompleteMark) {
-//   // Draw Path
-// }
-
-state.onUpdate((update) => console.log(update.active, update.log[0]))
-
-export const useSelector = createSelectorHook(state)
-export default state
-
 const easeOutQuad = (t: number) => t * (2 - t)
 
 export function getPointer() {
@@ -751,13 +718,11 @@ export function getPointer() {
   }
 }
 
-/**
- * Move a point in an angle by a distance.
- * @param x0
- * @param y0
- * @param a angle (radians)
- * @param d distance
- */
 export function projectPoint(x0: number, y0: number, a: number, d: number) {
   return [Math.cos(a) * d + x0, Math.sin(a) * d + y0]
 }
+
+export const useSelector = createSelectorHook(state)
+export default state
+
+// state.onUpdate((update) => console.log(update.active, update.log[0]))

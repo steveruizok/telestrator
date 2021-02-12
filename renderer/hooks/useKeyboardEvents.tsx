@@ -19,7 +19,11 @@ export default function useKeyboardEvents() {
         case "5":
         case "6":
         case "7": {
-          state.send("CHANGED_COLOR_KEY", { index: Number(e.key) - 1 })
+          if (e.metaKey) {
+            state.send("CHANGED_SIZE_KEY", { index: Number(e.key) - 1 })
+          } else {
+            state.send("CHANGED_COLOR_KEY", { index: Number(e.key) - 1 })
+          }
           break
         }
         case "f": {
@@ -42,20 +46,13 @@ export default function useKeyboardEvents() {
         }
         case "e": {
           if (e.metaKey) {
-            state.send("SOFT_CLEARED")
-          } else {
-            state.send("SELECTED_ELLIPSE")
-          }
-          break
-        }
-        case "e": {
-          if (e.metaKey) {
             if (e.shiftKey) {
               state.send("HARD_CLEARED")
+            } else {
+              state.send("SOFT_CLEARED")
             }
-            state.send("SOFT_CLEARED")
           } else {
-            state.send("SELECTED_ERASER")
+            state.send("SELECTED_ELLIPSE")
           }
           break
         }

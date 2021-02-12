@@ -5,27 +5,18 @@ import { colors, sizes } from "lib/defaults"
 import {
   X,
   Edit2,
-  MinusCircle,
-  Settings,
-  CornerUpLeft,
   Circle,
   Square,
   ArrowDownLeft,
   Lock,
   Unlock,
-  CornerUpRight,
 } from "react-feather"
 
 export default function Controls() {
   const hideActive = useSelector((state) => state.isIn("drawing"))
-  // const showActive = useSelector((state) =>
-  //   state.isInAny("active", "selecting")
-  // )
   const isFading = useSelector((state) => state.data.isFading)
   const selectedSize = useSelector((state) => state.data.size)
   const selectedColor = useSelector((state) => state.data.color)
-  // const canUndo = useSelector((state) => state.can("UNDO"))
-  // const canRedo = useSelector((state) => state.can("REDO"))
   const selectedTool = useSelector((state) =>
     state.isIn("pencil")
       ? "pencil"
@@ -65,13 +56,6 @@ export default function Controls() {
           color={selectedColor}
         />
       ))}
-      {/* <ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
-        <CornerUpLeft />
-      </ToolButton>
-      <ToolButton disabled={!canRedo} onClick={() => state.send("REDO")}>
-        <CornerUpRight />
-      </ToolButton> */}
-
       <ToolButton
         isSelected={selectedTool === "pencil"}
         onClick={() => state.send("SELECTED_PENCIL")}
@@ -99,16 +83,6 @@ export default function Controls() {
       <ToolButton onClick={() => state.send("TOGGLED_FADING")}>
         {isFading ? <Unlock /> : <Lock />}
       </ToolButton>
-      {/* <ToolButton
-        isSelected={selectedTool === "eraser"}
-        onClick={() => state.send("SELECTED_ERASER")}
-        onDoubleClick={() => state.send("MEDIUM_CLEARED")}
-      >
-        <MinusCircle size={24} />
-      </ToolButton> */}
-      {/* <ToolButton>
-        <Settings size={24} />
-      </ToolButton> */}
       <ToolButton onClick={() => state.send("DEACTIVATED")}>
         <X size={24} />
       </ToolButton>
@@ -281,3 +255,25 @@ const ToolButton = styled.button<{
     background-color: rgba(144, 144, 144, 0.2);
   }
 `
+
+/* 
+const canUndo = useSelector((state) => state.can("UNDO"))
+const canRedo = useSelector((state) => state.can("REDO"))
+
+<ToolButton disabled={!canUndo} onClick={() => state.send("UNDO")}>
+  <CornerUpLeft />
+</ToolButton>
+<ToolButton disabled={!canRedo} onClick={() => state.send("REDO")}>
+  <CornerUpRight />
+</ToolButton>
+<ToolButton
+  isSelected={selectedTool === "eraser"}
+  onClick={() => state.send("SELECTED_ERASER")}
+  onDoubleClick={() => state.send("MEDIUM_CLEARED")}
+>
+  <MinusCircle size={24} />
+</ToolButton> 
+<ToolButton>
+  <Settings size={24} />
+</ToolButton> 
+*/
