@@ -1,14 +1,14 @@
 # Telestrator
 
-## [Download the latest release here](https://github.com/steveruizok/telestrator/releases).
-
 An on-screen drawing tool (aka a ["telestrator"](https://en.wikipedia.org/wiki/Telestrator)) by [@steveruizok](https://twitter.com/steveruizok).
 
-### Notes
+This app is in active development! **More soon.**
 
-This app is in active development! The app is also not notarized / code signed so you may get security warnings. Hold tight, I'll get to that stuff.
+## Download
 
-**More soon.**
+You can [download the latest (pre)release here](https://github.com/steveruizok/telestrator/releases) though there looks to be some [security issues](https://github.com/steveruizok/telestrator/issues/1). Better for now to clone the repo, run `yarn install` and `yarn build` and open the built app from the dist folder. Hold tight, I'll get the app properly built for the next release.
+
+
 
 ## Keyboard Shortcuts
 
