@@ -14,7 +14,7 @@ interface Mark {
   color: string
   eraser: boolean
   points: number[]
-  strength: 1
+  strength: number
 }
 
 type Elements = {
@@ -27,7 +27,10 @@ type Refs = { [key in keyof Elements]: RefObject<Elements[key]> }
 
 const state = createState({
   data: {
+    isFading: true,
     isDragging: false,
+    fadeDelay: 0.5,
+    fadeDuration: 2,
     refs: undefined as Refs | undefined,
     color: "#42a6f6",
     size: 16,
@@ -45,37 +48,6 @@ const state = createState({
   },
 
   states: {
-    tool: {
-      on: {
-        CLEARED_MARKS: {
-          get: "elements",
-          do: ["clearHistory", "clearCurrentCanvas", "clearMarksCanvas"],
-          to: ["pencil", "selecting"],
-        },
-      },
-      initial: "pencil",
-      states: {
-        pencil: {
-          on: {
-            STARTED_DRAWING: {
-              get: "elements",
-              do: ["beginPencilMark", "drawCurrentMark"],
-            },
-            SELECTED_ERASER: { to: "eraser" },
-          },
-        },
-        eraser: {
-          on: {
-            STARTED_DRAWING: {
-              get: "elements",
-              secretlyDo: ["beginEraserMark", "drawCurrentMark"],
-            },
-            SELECTED_COLOR: { to: "pencil" },
-            SELECTED_PENCIL: { to: "pencil" },
-          },
-        },
-      },
-    },
     app: {
       initial: "loading",
       states: {
@@ -97,7 +69,7 @@ const state = createState({
           initial: "inactive",
           states: {
             inactive: {
-              onEnter: "deactivate",
+              onEnter: ["clearCurrentMark", "deactivate"],
               on: {
                 ACTIVATED: { to: "active" },
                 ENTERED_CONTROLS: { to: "selecting" },
@@ -108,13 +80,15 @@ const state = createState({
               on: {
                 LEFT_CONTROLS: { to: "inactive" },
                 SELECTED: { to: "active" },
+                STARTED_DRAWING: { to: "inactive" },
               },
             },
             active: {
-              onEnter: "activate",
+              onEnter: ["activate", { get: "elements", do: "handleResize" }],
               on: {
                 DEACTIVATED: { to: "inactive" },
                 UNDO: {
+                  get: "elements",
                   if: "hasMarks",
                   do: [
                     "undoMark",
@@ -124,6 +98,7 @@ const state = createState({
                   ],
                 },
                 REDO: {
+                  get: "elements",
                   if: "hasRedos",
                   do: [
                     "redoMark",
@@ -132,16 +107,72 @@ const state = createState({
                     "drawCurrentMark",
                   ],
                 },
-                UNLOADED: {
-                  do: "clearRefs",
-                  to: "loading",
-                },
                 RESIZED: {
                   get: "elements",
                   secretlyDo: ["handleResize", "drawMarks", "drawCurrentMark"],
                 },
+                UNLOADED: {
+                  do: "clearRefs",
+                  to: "loading",
+                },
               },
               states: {
+                tool: {
+                  on: {
+                    HARD_CLEARED: {
+                      get: "elements",
+                      do: [
+                        "clearHistory",
+                        "clearCurrentMark",
+                        "clearCurrentCanvas",
+                        "clearMarksCanvas",
+                      ],
+                      to: ["pencil", "inactive"],
+                    },
+                    MEDIUM_CLEARED: {
+                      get: "elements",
+                      do: [
+                        "clearHistory",
+                        "clearCurrentMark",
+                        "clearCurrentCanvas",
+                        "clearMarksCanvas",
+                      ],
+                      to: ["pencil", "selecting"],
+                    },
+                    SOFT_CLEARED: {
+                      get: "elements",
+                      do: [
+                        "clearHistory",
+                        "clearCurrentMark",
+                        "clearCurrentCanvas",
+                        "clearMarksCanvas",
+                      ],
+                      to: ["pencil"],
+                    },
+                  },
+                  initial: "pencil",
+                  states: {
+                    pencil: {
+                      on: {
+                        STARTED_DRAWING: {
+                          get: "elements",
+                          do: ["beginPencilMark", "drawCurrentMark"],
+                        },
+                        SELECTED_ERASER: { to: "eraser" },
+                      },
+                    },
+                    eraser: {
+                      on: {
+                        STARTED_DRAWING: {
+                          get: "elements",
+                          secretlyDo: ["beginEraserMark", "drawCurrentMark"],
+                        },
+                        SELECTED_COLOR: { to: "pencil" },
+                        SELECTED_PENCIL: { to: "pencil" },
+                      },
+                    },
+                  },
+                },
                 frame: {
                   initial: "fixed",
                   states: {
@@ -176,7 +207,7 @@ const state = createState({
                             "clearCurrentCanvas",
                             "drawMarks",
                           ],
-                          to: "notDrawing",
+                          to: ["notDrawing", "hasMarks"],
                         },
                         MOVED_CURSOR: {
                           get: "elements",
@@ -193,9 +224,33 @@ const state = createState({
       },
     },
     marks: {
+      initial: "noMarks",
       states: {
+        notFading: {},
         noMarks: {},
-        hasMarks: {},
+        hasMarks: {
+          onEnter: {
+            unless: "fadingEnabled",
+            to: "notFading",
+          },
+          repeat: {
+            onRepeat: [
+              {
+                unless: "hasMarks",
+                secretlyTo: "noMarks",
+              },
+              {
+                get: "elements",
+                secretlyDo: [
+                  "fadeMarks",
+                  "removeFadedMarks",
+                  "clearMarksCanvas",
+                  "drawMarks",
+                ],
+              },
+            ],
+          },
+        },
       },
     },
   },
@@ -209,6 +264,9 @@ const state = createState({
     },
   },
   conditions: {
+    fadingEnabled(data) {
+      return data.isFading
+    },
     hasMarks(data) {
       return data.marks.length > 0
     },
@@ -217,6 +275,18 @@ const state = createState({
     },
   },
   actions: {
+    // Fading
+    fadeMarks(data) {
+      const { fadeDuration } = data
+      const delta = 0.016 / fadeDuration
+      for (let mark of data.marks) {
+        mark.strength -= delta
+      }
+    },
+    removeFadedMarks(data) {
+      data.marks = data.marks.filter((mark) => mark.strength > 0)
+    },
+    // Setup
     clearRefs(data) {
       data.refs = undefined
     },
@@ -225,6 +295,7 @@ const state = createState({
     },
     activate() {
       const mainWindow = electron.remote.getCurrentWindow()
+      mainWindow.maximize()
       mainWindow.setIgnoreMouseEvents(false, { forward: false })
     },
     deactivate() {
@@ -302,7 +373,7 @@ const state = createState({
       data.currentMark = {
         size: data.size,
         color: data.color,
-        strength: 1,
+        strength: 1 + data.fadeDelay,
         eraser: false,
         points: [x, y, x, y, x, y, x, y],
       }
@@ -313,7 +384,7 @@ const state = createState({
         size: data.size,
         color: data.color,
         eraser: true,
-        strength: 1,
+        strength: 1 + data.fadeDelay,
         points: [x, y, x, y, x, y, x, y],
       }
     },
@@ -364,6 +435,7 @@ function drawMark(
   ctx.beginPath()
   ctx.lineWidth = mark.size
   ctx.strokeStyle = mark.color
+  ctx.globalAlpha = easeOutQuad(Math.min(1, mark.strength))
   ctx.globalCompositeOperation = "source-over"
 
   const pts = layer === "current" ? cSpline(mark.points) : mark.points
@@ -380,7 +452,7 @@ function drawMark(
     if (layer !== "current") {
       ctx.globalCompositeOperation = "destination-out"
     }
-    ctx.strokeStyle = "rgba(144, 144, 144, 1)"
+    ctx.strokeStyle = `rgba(144, 144, 144, .9)`
   }
 
   ctx.stroke()
@@ -391,3 +463,5 @@ function drawMark(
 
 export const useSelector = createSelectorHook(state)
 export default state
+
+const easeOutQuad = (t: number) => t * (2 - t)

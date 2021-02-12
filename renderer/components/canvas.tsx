@@ -1,15 +1,9 @@
 import state from "lib/state"
 import styled from "styled-components"
-import { useStateDesigner } from "@state-designer/react"
 import * as React from "react"
 import usePointer from "hooks/usePointer"
-import { colors, sizes } from "lib/defaults"
-import { Edit2, MinusCircle } from "react-feather"
-
-const Static = { w: 600, h: 400 }
 
 export default function App() {
-  const local = useStateDesigner(state)
   const rCanvasFrame = React.useRef<HTMLDivElement>()
   const rMarksCanvas = React.useRef<HTMLCanvasElement>()
   const rCurrentCanvas = React.useRef<HTMLCanvasElement>()

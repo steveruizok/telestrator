@@ -7,7 +7,7 @@ import {
   X,
   Edit2,
   MinusCircle,
-  Move,
+  Settings,
   CornerUpLeft,
   CornerUpRight,
 } from "react-feather"
@@ -27,8 +27,30 @@ export default function Controls() {
   // Deactivate when escape is pressed
   React.useEffect(() => {
     function releaseControl(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        state.send("DEACTIVATED")
+      switch (e.key) {
+        case "z": {
+          if (e.metaKey) {
+            if (e.shiftKey) {
+              state.send("REDO")
+            } else {
+              state.send("UNDO")
+            }
+          }
+          break
+        }
+        case "e": {
+          if (e.metaKey) {
+            if (e.shiftKey) {
+              state.send("HARD_CLEARED")
+            }
+            state.send("SOFT_CLEARED")
+          }
+          break
+        }
+        case "Escape": {
+          state.send("DEACTIVATED")
+          break
+        }
       }
     }
 
@@ -75,7 +97,7 @@ export default function Controls() {
       <ToolButton
         isSelected={selectedTool === "eraser"}
         onClick={() => state.send("SELECTED_ERASER")}
-        onDoubleClick={() => state.send("CLEARED_MARKS")}
+        onDoubleClick={() => state.send("MEDIUM_CLEARED")}
       >
         <MinusCircle size={24} />
       </ToolButton>
@@ -85,7 +107,7 @@ export default function Controls() {
         onPointerDown={() => state.send("STARTED_DRAGGING")}
         onPointerUp={() => state.send("STOPPED_DRAGGING")}
       >
-        <Move size={24} />
+        <Settings size={24} />
       </ToolButton>
       <ToolButton onClick={() => state.send("DEACTIVATED")}>
         <X size={24} />
@@ -95,6 +117,7 @@ export default function Controls() {
 }
 
 const ControlsContainer = styled.div<{ showActive: boolean }>`
+  overflow: hidden;
   cursor: pointer;
   position: absolute;
   bottom: 0;
@@ -104,7 +127,7 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   display: grid;
   grid-template-columns: 1fr;
   grid-auto-rows: 40px;
-  padding: 8px;
+  padding: 8px 0px;
   opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
   transition: all 0.25s;
   border-radius: 2px 20px 0 0;
@@ -123,15 +146,18 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
     position: relative;
     outline: none;
     z-index: 2;
-    border-radius: 100%;
+    padding: 0 8px;
     border: none;
-    padding: 0;
     background-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
     color: rgb(144, 144, 144, 1);
+
+    &:hover {
+      /* background-color: rgba(144, 144, 144, 0.1); */
+    }
   }
 `
 
@@ -145,6 +171,7 @@ const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
   align-items: center;
   justify-content: center;
   outline: none;
+  padding-left: 8px;
 
   &::after {
     content: "";
@@ -179,7 +206,7 @@ const SizeButton = styled.button<{
     border-radius: 100%;
     position: absolute;
     top: 0;
-    left: 0;
+    left: 8px;
     height: 100%;
     width: 100%;
     transform: scale(0.85);
@@ -238,9 +265,9 @@ const ToolButton = styled.button<{
     border-radius: 100%;
     position: absolute;
     top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
+    left: 8px;
+    height: 40px;
+    width: 40px;
     transform: scale(0.85);
     transition: all 0.16s;
     z-index: -1;
