@@ -2,7 +2,7 @@
   "private": true,
   "name": "telestrator",
   "description": "A drawing app for streaming.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Steve Ruiz @steveruizok",
   "homepage": "https://github.com/steveruizok/telestrator",
   "main": "app/background.js",
@@ -13,9 +13,9 @@
     "build:all": "nextron build --all",
     "build:win32": "nextron build --win --ia32",
     "build:win64": "nextron build --win --x64",
-    "build:mac": "nextron build --mac --arch=arm64 --x64",
+    "build:mac": "nextron build --mac --x64",
     "build:linux": "nextron build --linux",
-    "release:mac": "nextron build --mac --arm64 --x64"
+    "release:mac": "nextron build --mac --x64"
   },
   "dependencies": {
     "@state-designer/react": "^1.4.5",
