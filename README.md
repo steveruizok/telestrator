@@ -1,14 +1,14 @@
 # Telestrator
 
+## [Download the latest release](https://github.com/steveruizok/telestrator/releases)
+
 An on-screen drawing tool (aka a ["telestrator"](https://en.wikipedia.org/wiki/Telestrator)) by [@steveruizok](https://twitter.com/steveruizok).
 
 This app is in active development! **More soon.**
 
-## Download
+## Usage
 
-You can [download the latest (pre)release here](https://github.com/steveruizok/telestrator/releases) though there looks to be some [security issues](https://github.com/steveruizok/telestrator/issues/1). Better for now to clone the repo, run `yarn install` and `yarn build` and open the built app from the dist folder. Hold tight, I'll get the app properly built for the next release.
-
-
+With the app open, hover your cursor into the lower left corner of the screen to activate the controls. Click a color or tool to capture the cursor and begin drawing. Press `Escape` to release the cursor.
 
 ## Keyboard Shortcuts
 
