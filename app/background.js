@@ -117,21 +117,8 @@ if (isProd) {
 ;
 
 (async () => {
-  await electron__WEBPACK_IMPORTED_MODULE_0__["app"].whenReady();
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("browser-window-focus", () => {
-    if (mainWindow) {
-      mainWindow.webContents.send("projectMsg", {
-        eventName: "FOCUSED_WINDOW"
-      });
-    }
-  });
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("browser-window-blur", () => {
-    if (mainWindow) {
-      mainWindow.webContents.send("projectMsg", {
-        eventName: "BLURRED_WINDOW"
-      });
-    }
-  });
+  await electron__WEBPACK_IMPORTED_MODULE_0__["app"].whenReady(); // Create window
+
   const mainWindow = Object(_helpers__WEBPACK_IMPORTED_MODULE_2__["createWindow"])("main", {
     fullscreenable: false,
     width: 100,
@@ -151,7 +138,43 @@ if (isProd) {
     forward: true
   });
   mainWindow.setAlwaysOnTop(true, "floating");
-  mainWindow.setResizable(false);
+  mainWindow.setResizable(false); // Window events
+
+  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("browser-window-focus", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("projectMsg", {
+        eventName: "FOCUSED_WINDOW"
+      });
+    }
+  });
+  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("browser-window-blur", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("projectMsg", {
+        eventName: "BLURRED_WINDOW"
+      });
+    }
+  }); // Setup global shortcut
+
+  electron__WEBPACK_IMPORTED_MODULE_0__["app"].whenReady().then(() => {
+    // Register a 'CommandOrControl+X' shortcut listener.
+    const ret = electron__WEBPACK_IMPORTED_MODULE_0__["globalShortcut"].register("CommandOrControl+Shift+R", () => {
+      electron__WEBPACK_IMPORTED_MODULE_0__["app"].focus({
+        steal: true
+      });
+      mainWindow.webContents.focus();
+      mainWindow.webContents.send("projectMsg", {
+        eventName: "ACTIVATE_SHORTCUT"
+      });
+    });
+
+    if (!ret) {
+      console.warn("Shortcut registration failed.");
+    }
+  });
+  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("will-quit", () => {
+    // Unregister all shortcuts.
+    electron__WEBPACK_IMPORTED_MODULE_0__["globalShortcut"].unregisterAll();
+  }); // Kickoff
 
   if (isProd) {
     await mainWindow.loadURL("app://./home.html");
