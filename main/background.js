@@ -50,7 +50,7 @@ if (isProd) {
 
   app.whenReady().then(() => {
     // Register a 'CommandOrControl+X' shortcut listener.
-    const ret = globalShortcut.register("CommandOrControl+Shift+R", () => {
+    const ret = globalShortcut.register("CommandOrControl+Option+Z", () => {
       app.focus({ steal: true })
       mainWindow.webContents.focus()
       mainWindow.webContents.send("projectMsg", {

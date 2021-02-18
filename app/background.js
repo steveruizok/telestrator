@@ -157,7 +157,7 @@ if (isProd) {
 
   electron__WEBPACK_IMPORTED_MODULE_0__["app"].whenReady().then(() => {
     // Register a 'CommandOrControl+X' shortcut listener.
-    const ret = electron__WEBPACK_IMPORTED_MODULE_0__["globalShortcut"].register("CommandOrControl+Shift+R", () => {
+    const ret = electron__WEBPACK_IMPORTED_MODULE_0__["globalShortcut"].register("CommandOrControl+Option+Z", () => {
       electron__WEBPACK_IMPORTED_MODULE_0__["app"].focus({
         steal: true
       });
