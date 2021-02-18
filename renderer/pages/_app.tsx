@@ -1,4 +1,5 @@
 import styled from "styled-components"
+import Head from "next/head"
 import GlobalStyles from "../styles/globals"
 import usePointer from "hooks/usePointer"
 import useWindowEvents from "hooks/useWindowEvents"

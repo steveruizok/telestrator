@@ -91,6 +91,9 @@ const state = createState({
             inactive: {
               onEnter: ["clearCurrentMark", "deactivate"],
               on: {
+                ACTIVATE_SHORTCUT: {
+                  to: ["active", "drawing"],
+                },
                 ACTIVATED: { to: "active" },
                 ENTERED_CONTROLS: { to: "selecting" },
               },

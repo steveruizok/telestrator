@@ -1,4 +1,4 @@
-import { app, screen } from "electron"
+import { app, globalShortcut } from "electron"
 import serve from "electron-serve"
 import { createWindow } from "./helpers"
 
@@ -13,17 +13,7 @@ if (isProd) {
 ;(async () => {
   await app.whenReady()
 
-  app.on("browser-window-focus", () => {
-    if (mainWindow) {
-      mainWindow.webContents.send("projectMsg", { eventName: "FOCUSED_WINDOW" })
-    }
-  })
-
-  app.on("browser-window-blur", () => {
-    if (mainWindow) {
-      mainWindow.webContents.send("projectMsg", { eventName: "BLURRED_WINDOW" })
-    }
-  })
+  // Create window
 
   const mainWindow = createWindow("main", {
     fullscreenable: false,
@@ -41,6 +31,44 @@ if (isProd) {
   mainWindow.setIgnoreMouseEvents(true, { forward: true })
   mainWindow.setAlwaysOnTop(true, "floating")
   mainWindow.setResizable(false)
+
+  // Window events
+
+  app.on("browser-window-focus", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("projectMsg", { eventName: "FOCUSED_WINDOW" })
+    }
+  })
+
+  app.on("browser-window-blur", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("projectMsg", { eventName: "BLURRED_WINDOW" })
+    }
+  })
+
+  // Setup global shortcut
+
+  app.whenReady().then(() => {
+    // Register a 'CommandOrControl+X' shortcut listener.
+    const ret = globalShortcut.register("CommandOrControl+Shift+R", () => {
+      app.focus({ steal: true })
+      mainWindow.webContents.focus()
+      mainWindow.webContents.send("projectMsg", {
+        eventName: "ACTIVATE_SHORTCUT",
+      })
+    })
+
+    if (!ret) {
+      console.warn("Shortcut registration failed.")
+    }
+  })
+
+  app.on("will-quit", () => {
+    // Unregister all shortcuts.
+    globalShortcut.unregisterAll()
+  })
+
+  // Kickoff
 
   if (isProd) {
     await mainWindow.loadURL("app://./home.html")
