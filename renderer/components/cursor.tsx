@@ -8,6 +8,7 @@ export default function Cursor() {
   const activeColor = useSelector((state) => state.data.color)
   return (
     <CursorContainer
+      data-cursor="true"
       style={{
         position: "absolute",
         top: 0,

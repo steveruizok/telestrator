@@ -80,6 +80,14 @@ const Layout = styled.div`
     width: 100%;
     height: 100%;
   }
+
+  & *[data-cursor="true"] {
+    opacity: 0;
+  }
+
+  :hover *[data-cursor="true"] {
+    opacity: 1;
+  }
 `
 
 const CanvasContainer = styled.div`

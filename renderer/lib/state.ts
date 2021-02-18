@@ -1,4 +1,4 @@
-import electron from "electron"
+import { remote, ipcRenderer } from "electron"
 import { RefObject } from "react"
 import { createSelectorHook, createState } from "@state-designer/react"
 import cSpline from "cardinal-spline"
@@ -63,7 +63,7 @@ const state = createState({
   on: {
     SELECTED_COLOR: "setColor",
     SELECTED_SIZE: "setSize",
-    LOADED: ["setRefs", "setupCanvases"],
+    LOADED: ["setRefs", { get: "elements", do: "setupCanvases" }, "activate"],
   },
   states: {
     app: {
@@ -84,6 +84,9 @@ const state = createState({
         },
         ready: {
           initial: "inactive",
+          on: {
+            FOCUSED_WINDOW: [],
+          },
           states: {
             inactive: {
               onEnter: ["clearCurrentMark", "deactivate"],
@@ -98,12 +101,14 @@ const state = createState({
                 LEFT_CONTROLS: { to: "inactive" },
                 SELECTED: { to: "active" },
                 STARTED_DRAWING: { to: "inactive" },
+                BLURRED_WINDOW: { to: "inactive" },
               },
             },
             active: {
               onEnter: ["activate", { get: "elements", do: "resizeCanvases" }],
               on: {
                 DEACTIVATED: { to: "inactive" },
+                BLURRED_WINDOW: { to: "inactive" },
                 CHANGED_COLOR_KEY: { do: "setColorFromKey" },
                 CHANGED_SIZE_KEY: { do: "setSizeFromKey" },
                 UNDO: {
@@ -270,12 +275,13 @@ const state = createState({
           },
         },
         noMarks: {
-          on: {
-            TOGGLED_FADING: { do: "toggleFading", to: "notFading" },
-          },
           onEnter: {
             get: "elements",
-            secretlyDo: ["clearPreviousMarks", "clearMarksCanvas"],
+            if: "isLoaded",
+            secretlyDo: ["clearPreviousMarks", "drawPreviousMarks"],
+          },
+          on: {
+            TOGGLED_FADING: { do: "toggleFading", to: "notFading" },
           },
         },
         hasMarks: {
@@ -324,7 +330,7 @@ const state = createState({
   },
   results: {
     elements(data) {
-      // console.log(data.refs)
+      if (!data.refs) return {}
 
       const frame = data.refs.frame.current
       const currentCanvas = data.refs.currentCanvas.current
@@ -342,6 +348,9 @@ const state = createState({
     },
   },
   conditions: {
+    isLoaded(data) {
+      return !!data.refs?.currentCanvas?.current
+    },
     fadingEnabled(data) {
       return data.isFading
     },
@@ -376,17 +385,19 @@ const state = createState({
       }
     },
     removeFadedMarks(data) {
-      data.marks = data.marks.filter((mark) => mark.strength > 0)
+      data.marks = data.marks.filter((mark) => mark.strength >= 0)
     },
     // Pointer Capture
     activate() {
-      const mainWindow = electron.remote.getCurrentWindow()
+      const mainWindow = remote.getCurrentWindow()
+
       mainWindow.maximize()
       mainWindow.setIgnoreMouseEvents(false, { forward: false })
       document.body.style.setProperty("cursor", "none")
     },
     deactivate() {
-      const mainWindow = electron.remote.getCurrentWindow()
+      const mainWindow = remote.getCurrentWindow()
+
       mainWindow.setIgnoreMouseEvents(true, { forward: true })
       document.body.style.setProperty("cursor", "auto")
     },

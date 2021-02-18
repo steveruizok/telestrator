@@ -35,6 +35,7 @@ export default function Controls() {
     <ControlsContainer
       data-hide={hideActive}
       showActive={false}
+      isDrawing={hideActive}
       onMouseOver={() => state.send("ENTERED_CONTROLS")}
       onMouseLeave={() => state.send("LEFT_CONTROLS")}
       onMouseDown={() => state.send("SELECTED")}
@@ -90,8 +91,10 @@ export default function Controls() {
   )
 }
 
-const ControlsContainer = styled.div<{ showActive: boolean }>`
-  cursor: none !important;
+const ControlsContainer = styled.div<{
+  showActive: boolean
+  isDrawing: boolean
+}>`
   overflow: hidden;
   position: absolute;
   bottom: 0;
@@ -108,10 +111,6 @@ const ControlsContainer = styled.div<{ showActive: boolean }>`
   background-color: rgba(144, 144, 144, 0);
   transform: ${({ showActive }) =>
     showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
-
-  & * {
-    cursor: none !important;
-  }
 
   &[data-hide="true"] {
     pointer-events: none;

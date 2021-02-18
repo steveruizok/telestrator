@@ -1,4 +1,4 @@
-import { app } from "electron"
+import { app, screen } from "electron"
 import serve from "electron-serve"
 import { createWindow } from "./helpers"
 
@@ -13,21 +13,34 @@ if (isProd) {
 ;(async () => {
   await app.whenReady()
 
+  app.on("browser-window-focus", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("projectMsg", { eventName: "FOCUSED_WINDOW" })
+    }
+  })
+
+  app.on("browser-window-blur", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("projectMsg", { eventName: "BLURRED_WINDOW" })
+    }
+  })
+
   const mainWindow = createWindow("main", {
-    width: 1000,
-    height: 600,
+    fullscreenable: false,
+    width: 100,
+    height: 100,
     transparent: true,
     frame: false,
     titleBarStyle: "customButtonsOnHover",
-    webPreferences: { enableRemoteModule: true },
+    webPreferences: { enableRemoteModule: true, nodeIntegration: true },
     hasShadow: false,
-    fullscreenable: false,
     title: "Telestrator",
   })
 
   mainWindow.maximize()
   mainWindow.setIgnoreMouseEvents(true, { forward: true })
   mainWindow.setAlwaysOnTop(true, "floating")
+  mainWindow.setResizable(false)
 
   if (isProd) {
     await mainWindow.loadURL("app://./home.html")

@@ -1,11 +1,13 @@
 import styled from "styled-components"
 import GlobalStyles from "../styles/globals"
 import usePointer from "hooks/usePointer"
+import useWindowEvents from "hooks/useWindowEvents"
 import useKeyboardEvents from "hooks/useKeyboardEvents"
 
 function MyApp({ Component, pageProps }) {
   useKeyboardEvents()
   usePointer()
+  useWindowEvents()
   return (
     <>
       <GlobalStyles />
