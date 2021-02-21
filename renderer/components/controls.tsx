@@ -10,6 +10,7 @@ import {
   ArrowDownLeft,
   Lock,
   Unlock,
+  PenTool,
 } from "react-feather"
 
 export default function Controls() {
@@ -17,6 +18,7 @@ export default function Controls() {
   const isFading = useSelector((state) => state.data.isFading)
   const selectedSize = useSelector((state) => state.data.size)
   const selectedColor = useSelector((state) => state.data.color)
+  const isPressure = useSelector((state) => state.data.pressure)
   const selectedTool = useSelector((state) =>
     state.isIn("pencil")
       ? "pencil"
@@ -59,9 +61,16 @@ export default function Controls() {
       ))}
       <ToolButton
         isSelected={selectedTool === "pencil"}
-        onClick={() => state.send("SELECTED_PENCIL")}
+        onDoubleClick={() => state.send("TOGGLED_PRESSURE")}
+        onClick={(e) => {
+          if (e.shiftKey) {
+            state.send("TOGGLED_PRESSURE")
+          } else {
+            state.send("SELECTED_PENCIL")
+          }
+        }}
       >
-        <Edit2 size={24} />
+        {isPressure ? <PenTool size={24} /> : <Edit2 size={24} />}
       </ToolButton>
       <ToolButton
         isSelected={selectedTool === "arrow"}

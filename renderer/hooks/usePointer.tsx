@@ -6,12 +6,16 @@ interface MotionPointer {
   y: MotionValue<number>
   dx: MotionValue<number>
   dy: MotionValue<number>
+  p: MotionValue<number>
+  pointerType: string
 }
 export const mvPointer: MotionPointer = {
   x: motionValue(0),
   y: motionValue(0),
   dx: motionValue(0),
   dy: motionValue(0),
+  p: motionValue(0),
+  pointerType: "mouse",
 }
 
 interface PointerInfo {
@@ -32,14 +36,12 @@ export default function usePointer(
       const dx = x - mvPointer.x.get()
       const dy = y - mvPointer.y.get()
 
-      // if (Math.hypot(dx, dy) < 8) {
-      //   return
-      // }
-
       mvPointer.x.set(x)
       mvPointer.y.set(y)
       mvPointer.dx.set(dx)
       mvPointer.dy.set(dy)
+      mvPointer.p.set(e.pressure)
+      mvPointer.pointerType = e.pointerType
 
       if (onMove) {
         onMove({ x, y, dx, dy })

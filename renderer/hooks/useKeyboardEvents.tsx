@@ -5,13 +5,6 @@ export default function useKeyboardEvents() {
   useEffect(() => {
     function releaseControl(e: KeyboardEvent) {
       switch (e.key) {
-        case "Shift": {
-          state.send("TOGGLED_ASPECT_LOCK")
-          break
-        }
-        case "Meta": {
-          state.send("TOGGLED_FILL")
-        }
         case "1":
         case "2":
         case "3":
@@ -30,10 +23,17 @@ export default function useKeyboardEvents() {
           if (e.metaKey) {
             state.send("TOGGLED_FADING")
           }
+          break
+        }
+        case "D":
+        case "P": {
+          state.send("TOGGLED_PRESSURE")
+          break
         }
         case "d":
         case "p": {
           state.send("SELECTED_PENCIL")
+
           break
         }
         case "a": {
@@ -69,6 +69,13 @@ export default function useKeyboardEvents() {
         case "Escape": {
           state.send("DEACTIVATED")
           break
+        }
+        case "Shift": {
+          state.send("TOGGLED_ASPECT_LOCK")
+          break
+        }
+        case "Meta": {
+          state.send("TOGGLED_FILL")
         }
       }
     }

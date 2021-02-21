@@ -1,9 +1,11 @@
-import { remote, ipcRenderer } from "electron"
+import { remote } from "electron"
+import getPath from "perfect-freehand"
 import { RefObject } from "react"
 import { createSelectorHook, createState } from "@state-designer/react"
-import cSpline from "cardinal-spline"
 import { mvPointer } from "hooks/usePointer"
 import * as defaultValues from "lib/defaults"
+
+// TODO: Fades should begin after a certain amount of time has passed since the last mark was made.
 
 enum MarkType {
   Freehand = "freehand",
@@ -13,22 +15,20 @@ enum MarkType {
   Arrow = "arrow",
 }
 
-interface Mark {
+interface MarkBase {
+  pointerType: string
+  pressure: boolean
   type: MarkType
   size: number
   color: string
   eraser: boolean
-  points: number[]
   strength: number
+  points: number[][]
 }
 
-interface CompleteMark {
-  type: MarkType
-  size: number
-  color: string
-  eraser: boolean
-  points: number[]
-  strength: number
+interface Mark extends MarkBase {}
+
+interface CompleteMark extends MarkBase {
   path: Path2D
 }
 
@@ -44,11 +44,14 @@ const state = createState({
   data: {
     isFading: true,
     isDragging: false,
-    fadeDelay: 0.2,
-    fadeDuration: 1,
+    fadeDelay: 1,
+    fadeDuration: 0.5,
+    hideCursor: false,
     refs: undefined as Refs | undefined,
     color: "#42a6f6",
     size: 16,
+    pressure: true,
+    fading: [] as CompleteMark[],
     marks: [] as CompleteMark[],
     currentMark: undefined as Mark | undefined,
     redos: [] as CompleteMark[],
@@ -180,11 +183,13 @@ const state = createState({
                       ],
                       to: ["pencil"],
                     },
+                    TOGGLED_PRESSURE: { do: "togglePressure" },
                     SELECTED_PENCIL: { to: "pencil" },
                     SELECTED_RECT: { to: "rect" },
                     SELECTED_ARROW: { to: "arrow" },
                     SELECTED_ELLIPSE: { to: "ellipse" },
                     SELECTED_ERASER: { to: "eraser" },
+                    STARTED_DRAWING: { do: "restoreFades" },
                   },
                   initial: "pencil",
                   states: {
@@ -224,7 +229,7 @@ const state = createState({
                       on: {
                         STARTED_DRAWING: {
                           get: "elements",
-                          secretlyDo: ["beginEraserMark", "drawCurrentMark"],
+                          do: ["beginEraserMark", "drawCurrentMark"],
                         },
                         SELECTED_COLOR: { to: "pencil" },
                       },
@@ -236,7 +241,16 @@ const state = createState({
                   states: {
                     notDrawing: {
                       on: {
-                        STARTED_DRAWING: { to: "drawing" },
+                        STARTED_DRAWING: {
+                          if: "drawingWithPen",
+                          to: ["cursorHidden", "drawing"],
+                          else: { to: "drawing" },
+                        },
+                      },
+                      onEnter: {
+                        wait: "fadeDelay",
+                        do: "pushMarksToFading",
+                        to: "hasMarks",
                       },
                     },
                     drawing: {
@@ -244,7 +258,7 @@ const state = createState({
                       on: {
                         STOPPED_DRAWING: {
                           get: "elements",
-                          do: [
+                          secretlyDo: [
                             "completeMark",
                             "clearCurrentMark",
                             "drawPreviousMarks",
@@ -266,6 +280,20 @@ const state = createState({
         },
       },
     },
+    cursor: {
+      initial: "cursorVisible",
+      states: {
+        cursorHidden: {
+          on: {
+            MOVED_CURSOR: {
+              unless: "drawingWithPen",
+              to: ["cursorVisible"],
+            },
+          },
+        },
+        cursorVisible: {},
+      },
+    },
     marks: {
       initial: "noMarks",
       states: {
@@ -281,7 +309,7 @@ const state = createState({
           onEnter: {
             get: "elements",
             if: "isLoaded",
-            secretlyDo: ["clearPreviousMarks", "drawPreviousMarks"],
+            secretlyDo: ["clearMarksCanvas", "drawPreviousMarks"],
           },
           on: {
             TOGGLED_FADING: { do: "toggleFading", to: "notFading" },
@@ -294,7 +322,7 @@ const state = createState({
               to: "notFading",
             },
             {
-              unless: "hasMarks",
+              unless: ["hasFadingMarks", "hasMarks"],
               to: "noMarks",
             },
           ],
@@ -312,7 +340,7 @@ const state = createState({
           repeat: {
             onRepeat: [
               {
-                unless: ["hasMarks", "hasCurrentMark"],
+                unless: ["hasFadingMarks"],
                 to: "noMarks",
                 else: [
                   {
@@ -320,7 +348,6 @@ const state = createState({
                     secretlyDo: ["fadeMarks", "removeFadedMarks"],
                   },
                   {
-                    if: "hasFadingMarks",
                     secretlyDo: ["clearMarksCanvas", "drawPreviousMarks"],
                   },
                 ],
@@ -329,6 +356,11 @@ const state = createState({
           },
         },
       },
+    },
+  },
+  times: {
+    fadeDelay(data) {
+      return data.fadeDelay
     },
   },
   results: {
@@ -367,28 +399,34 @@ const state = createState({
       return data.redos.length > 0
     },
     hasFadingMarks(data) {
-      return !!data.marks.find((mark) => mark.strength <= 1)
+      return data.fading.length > 0
+    },
+    drawingWithPen(data) {
+      const { pointerType } = getPointer()
+      return pointerType === "pen"
     },
   },
   actions: {
     // Fading
     toggleFading(data) {
-      data.isFading = !data.isFading
+      const { isFading, fading, marks } = data
+      data.isFading = !isFading
       if (!data.isFading) {
-        for (let mark of data.marks) {
+        marks.unshift(...fading)
+        for (let mark of marks) {
           mark.strength = 1
         }
       }
     },
     fadeMarks(data) {
-      const { fadeDuration } = data
+      const { fadeDuration, fading } = data
       const delta = 0.016 / fadeDuration
-      for (let mark of data.marks) {
+      for (let mark of fading) {
         mark.strength -= delta
       }
     },
     removeFadedMarks(data) {
-      data.marks = data.marks.filter((mark) => mark.strength >= 0)
+      data.fading = data.fading.filter((mark) => mark.strength > 0)
     },
     // Pointer Capture
     activate() {
@@ -440,6 +478,9 @@ const state = createState({
         data.size = keys[index]
       }
     },
+    togglePressure(data) {
+      data.pressure = !data.pressure
+    },
     setColor(data, payload) {
       data.color = payload
     },
@@ -447,6 +488,10 @@ const state = createState({
       data.size = payload
     },
     // Marks
+    pushMarksToFading(data) {
+      data.fading = [...data.marks]
+      data.marks = []
+    },
     clearPreviousMarks(data, payload, elements: Elements) {
       data.marks = []
     },
@@ -475,92 +520,115 @@ const state = createState({
       const ctx = cvs.getContext("2d")
       ctx.clearRect(0, 0, cvs.width, cvs.height)
     },
-    beginPencilMark(data, payload: { pressure: number }) {
-      const { x, y } = getPointer()
-      let p = payload.pressure || 1
+    hideOrShowCursor(data, payload) {
+      const { pointerType } = getPointer()
+      data.hideCursor = pointerType === "pen"
+    },
+    restoreFades(data) {
+      // for (let mark of data.marks) {
+      //   if (mark.strength > 0.75) {
+      //     mark.strength = 1 * 2
+      //   }
+      // }
+    },
+    beginPencilMark(data) {
+      const { x, y, pressure, pointerType } = getPointer()
 
       data.currentMark = {
+        pointerType,
+        pressure: data.pressure,
         type: MarkType.Freehand,
         size: data.size,
         color: data.color,
-        strength: 1 + data.fadeDelay,
+        strength: 1,
         eraser: false,
-        points: [x, y, x, y],
+        points: [[x, y, pressure]],
       }
     },
-    beginEraserMark(data, payload: { pressure: number }) {
-      const { x, y } = getPointer()
+    beginEraserMark(data) {
+      const { x, y, pressure, pointerType } = getPointer()
 
       data.currentMark = {
+        pointerType,
+        pressure: data.pressure,
         type: MarkType.Freehand,
         size: data.size,
         color: data.color,
         eraser: true,
-        strength: 1 + data.fadeDelay,
-        points: [x, y, x, y],
+        strength: 1,
+        points: [[x, y, pressure]],
       }
     },
-    beginRectMark(data, payload: { pressure: number }) {
-      const { x, y } = getPointer()
+    beginRectMark(data) {
+      const { x, y, pressure, pointerType } = getPointer()
 
       data.currentMark = {
+        pointerType,
+        pressure: data.pressure,
         type: MarkType.Rect,
         size: data.size,
         color: data.color,
         eraser: false,
-        strength: 1 + data.fadeDelay,
-        points: [x, y, x, y],
+        strength: 1,
+        points: [[x, y, pressure]],
       }
     },
-    beginEllipseMark(data, payload: { pressure: number }) {
-      const { x, y } = getPointer()
+    beginEllipseMark(data) {
+      const { x, y, pressure, pointerType } = getPointer()
 
       data.currentMark = {
+        pointerType,
+        pressure: data.pressure,
         type: MarkType.Ellipse,
         size: data.size,
         color: data.color,
         eraser: false,
-        strength: 1 + data.fadeDelay,
-        points: [x, y, x, y],
+        strength: 1,
+        points: [[x, y, pressure]],
       }
     },
-    beginArrowMark(data, payload: { pressure: number }) {
-      const { x, y } = getPointer()
+    beginArrowMark(data) {
+      const { x, y, pressure, pointerType } = getPointer()
 
       data.currentMark = {
+        pointerType,
+        pressure: data.pressure,
         type: MarkType.Arrow,
         size: data.size,
         color: data.color,
         eraser: false,
-        strength: 1 + data.fadeDelay,
-        points: [x, y, x, y],
+        strength: 1,
+        points: [[x, y, pressure]],
       }
     },
-    addPointToMark(data, payload: { pressure: number }) {
+    addPointToMark(data) {
       const { points, type } = data.currentMark
-      const { x, y } = getPointer()
+      const { x, y, pressure, pointerType } = getPointer()
+
+      if (pointerType !== data.currentMark.pointerType) {
+        return
+      }
 
       switch (type) {
         case MarkType.Freehand: {
-          points.push(x, y)
+          points.push([x, y, pressure])
           break
         }
         case MarkType.Arrow:
         case MarkType.Ellipse:
         case MarkType.Rect: {
-          points[2] = x
-          points[3] = y
+          points[1] = [x, y, pressure]
           break
         }
       }
     },
-    completeMark(data, payload: { pressure: number }) {
+    completeMark(data) {
       const { type } = data.currentMark
       let path: Path2D
 
       switch (type) {
         case MarkType.Freehand: {
-          path = getFreehandPath(data.currentMark)
+          path = getFreehandPath(data.currentMark, data.pressure)
           break
         }
         case MarkType.Ellipse: {
@@ -593,14 +661,20 @@ const state = createState({
         ctx.lineCap = "round"
         ctx.lineJoin = "round"
 
-        for (let mark of data.marks) {
+        for (let mark of [...data.marks, ...data.fading]) {
+          ctx.fillStyle = mark.color
           ctx.strokeStyle = mark.color
           ctx.lineWidth = mark.size
           ctx.globalCompositeOperation = mark.eraser
             ? "destination-out"
             : "source-over"
           ctx.globalAlpha = easeOutQuad(Math.min(1, mark.strength))
-          ctx.stroke(mark.path)
+
+          if (mark.type === MarkType.Freehand) {
+            ctx.fill(mark.path)
+          } else {
+            ctx.stroke(mark.path)
+          }
         }
       }
     },
@@ -619,7 +693,7 @@ const state = createState({
 
         switch (type) {
           case MarkType.Freehand: {
-            path = getFreehandPath(data.currentMark)
+            path = getFreehandPath(data.currentMark, data.pressure)
             break
           }
           case MarkType.Ellipse: {
@@ -647,12 +721,20 @@ const state = createState({
           ctx.strokeStyle = "rgba(144, 144, 144, 1)"
         }
 
-        ctx.stroke(path)
+        if (mark.type === MarkType.Freehand) {
+          ctx.fill(path)
+        } else {
+          ctx.stroke(path)
+        }
       }
     },
     // Undos and redos
     undoMark(data) {
-      data.redos.push(data.marks.pop())
+      if (data.marks.length > 0) {
+        data.redos.push(data.marks.pop())
+      } else if (data.fading.length > 0) {
+        data.redos.push(data.fading.pop())
+      }
     },
     redoMark(data) {
       data.marks.push(data.redos.pop())
@@ -664,23 +746,49 @@ const state = createState({
 })
 
 // Draw a mark onto the given canvas
-function getFreehandPath(mark: Mark) {
-  const [x, y, ...rest] = cSpline(mark.points)
+function getFreehandPath(mark: Mark, isPressure: boolean) {
+  const { points } = mark
 
-  const path = new Path2D()
-  path.moveTo(x, y)
-  for (let i = 0; i < rest.length - 1; i += 2) {
-    path.lineTo(rest[i], rest[i + 1])
+  if (points.length < 10) {
+    const path = new Path2D()
+    const [x, y] = points[points.length - 1]
+    path.moveTo(x, y)
+    path.ellipse(x, y, mark.size / 2, mark.size / 2, 0, Math.PI * 2, 0)
+    return path
   }
+  const path = new Path2D(
+    getPath(points, {
+      minSize: mark.size * 0.382,
+      maxSize: isPressure ? mark.size : mark.size / 2,
+      pressure: isPressure,
+      simulatePressure: mark.pointerType !== "pen",
+    })
+  )
   return path
+
+  // points.unshift(points[0])
+
+  // const [x, y, ...rest] = cSpline(
+  //   mark.points.reduce<number[]>((acc, [x, y]) => {
+  //     acc.push(x, y)
+  //     return acc
+  //   }, [])
+  // )
+  // console.log(x, y, rest)
+  // const path = new Path2D()
+  // path.moveTo(x, y)
+  // for (let i = 0; i < rest.length - 2; i += 2) {
+  //   path.lineTo(rest[i], rest[i + 1])
+  // }
+  // return path
 }
 
 function getRectPath(mark: Mark) {
   const { points } = mark
-  const x0 = Math.min(points[0], points[2])
-  const y0 = Math.min(points[1], points[3])
-  const x1 = Math.max(points[0], points[2])
-  const y1 = Math.max(points[1], points[3])
+  const x0 = Math.min(points[0][0], points[1][0])
+  const y0 = Math.min(points[0][1], points[1][1])
+  const x1 = Math.max(points[0][0], points[1][0])
+  const y1 = Math.max(points[0][1], points[1][1])
 
   const path = new Path2D()
   path.rect(x0, y0, x1 - x0, y1 - y0)
@@ -689,10 +797,10 @@ function getRectPath(mark: Mark) {
 
 function getEllipsePath(mark: Mark) {
   const { points } = mark
-  const x0 = Math.min(points[0], points[2])
-  const y0 = Math.min(points[1], points[3])
-  const x1 = Math.max(points[0], points[2])
-  const y1 = Math.max(points[1], points[3])
+  const x0 = Math.min(points[0][0], points[1][0])
+  const y0 = Math.min(points[0][1], points[1][1])
+  const x1 = Math.max(points[0][0], points[1][0])
+  const y1 = Math.max(points[0][1], points[1][1])
   const w = x1 - x0
   const h = y1 - y0
   const cx = x0 + w / 2
@@ -705,7 +813,7 @@ function getEllipsePath(mark: Mark) {
 
 function getArrowPath(mark: Mark) {
   const { points } = mark
-  const [x0, y0, x1, y1] = points
+  const [[x0, y0], [x1, y1]] = points
   const angle = Math.atan2(y1 - y0, x1 - x0)
   const distance = Math.hypot(y1 - y0, x1 - x0)
   const leg = (Math.min(distance / 2, 48) * mark.size) / 16
@@ -729,6 +837,8 @@ export function getPointer() {
     y: mvPointer.y.get(),
     dx: mvPointer.dx.get(),
     dy: mvPointer.dy.get(),
+    pressure: mvPointer.p.get(),
+    pointerType: mvPointer.pointerType,
   }
 }
 
