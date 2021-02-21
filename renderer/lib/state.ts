@@ -92,10 +92,10 @@ const state = createState({
           },
           states: {
             inactive: {
-              onEnter: ["clearCurrentMark", "deactivate"],
+              onEnter: ["pushMarksToFading", "clearCurrentMark", "deactivate"],
               on: {
                 ACTIVATE_SHORTCUT: {
-                  to: ["active", "drawing"],
+                  to: ["active", "notDrawing"],
                 },
                 ACTIVATED: { to: "active" },
                 ENTERED_CONTROLS: { to: "selecting" },
@@ -189,7 +189,10 @@ const state = createState({
                     SELECTED_ARROW: { to: "arrow" },
                     SELECTED_ELLIPSE: { to: "ellipse" },
                     SELECTED_ERASER: { to: "eraser" },
-                    STARTED_DRAWING: { do: "restoreFades" },
+                    STARTED_DRAWING: {
+                      get: "elements",
+                      do: "restoreFades",
+                    },
                   },
                   initial: "pencil",
                   states: {
@@ -248,9 +251,8 @@ const state = createState({
                         },
                       },
                       onEnter: {
-                        wait: "fadeDelay",
-                        do: "pushMarksToFading",
-                        to: "hasMarks",
+                        wait: 0.8,
+                        secretlyDo: "pushMarksToFading",
                       },
                     },
                     drawing: {
@@ -340,7 +342,7 @@ const state = createState({
           repeat: {
             onRepeat: [
               {
-                unless: ["hasFadingMarks"],
+                unless: ["hasFadingMarks", "hasMarks"],
                 to: "noMarks",
                 else: [
                   {
@@ -489,7 +491,7 @@ const state = createState({
     },
     // Marks
     pushMarksToFading(data) {
-      data.fading = [...data.marks]
+      data.fading.push(...data.marks)
       data.marks = []
     },
     clearPreviousMarks(data, payload, elements: Elements) {
@@ -524,13 +526,7 @@ const state = createState({
       const { pointerType } = getPointer()
       data.hideCursor = pointerType === "pen"
     },
-    restoreFades(data) {
-      // for (let mark of data.marks) {
-      //   if (mark.strength > 0.75) {
-      //     mark.strength = 1 * 2
-      //   }
-      // }
-    },
+    restoreFades(data) {},
     beginPencilMark(data) {
       const { x, y, pressure, pointerType } = getPointer()
 
@@ -747,6 +743,7 @@ const state = createState({
 
 // Draw a mark onto the given canvas
 function getFreehandPath(mark: Mark, isPressure: boolean) {
+  console.log("getting points")
   const { points } = mark
 
   if (points.length < 10) {
