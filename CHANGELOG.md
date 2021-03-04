@@ -1,3 +1,11 @@
+# 0.3.1
+
+- Changes colors.
+- Adds slight transparency to drawn marks.
+- Improves contrast on panel.
+- Updates `perfect-freehand`.
+- Fixes bug where marks would be redrawn after erasing when locked.
+
 # 0.3.0
 
 ## Additions

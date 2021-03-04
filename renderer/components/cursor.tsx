@@ -17,7 +17,7 @@ export default function Cursor() {
         y: mvPointer.y,
       }}
     >
-      <Edit2 fill={activeColor} />
+      <Edit2 fill={`rgba(${activeColor}, .8)`} />
     </CursorContainer>
   )
 }

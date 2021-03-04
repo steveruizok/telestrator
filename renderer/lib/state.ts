@@ -1,5 +1,6 @@
 import { remote } from "electron"
-import getPath from "perfect-freehand"
+import getStroke from "perfect-freehand"
+import { getSvgPathFromStroke } from "lib/utils"
 import { RefObject } from "react"
 import { createSelectorHook, createState } from "@state-designer/react"
 import { mvPointer } from "hooks/usePointer"
@@ -48,8 +49,8 @@ const state = createState({
     fadeDuration: 0.5,
     hideCursor: false,
     refs: undefined as Refs | undefined,
-    color: "#42a6f6",
-    size: 16,
+    color: "52, 205, 239",
+    size: 32,
     pressure: true,
     fading: [] as CompleteMark[],
     marks: [] as CompleteMark[],
@@ -59,9 +60,7 @@ const state = createState({
       width: 0,
       height: 0,
     },
-    circle: undefined as Mark | undefined,
-    square: undefined as Mark | undefined,
-    arrow: undefined as Mark | undefined,
+    selectedTool: "pencil",
   },
   on: {
     SELECTED_COLOR: "setColor",
@@ -161,7 +160,7 @@ const state = createState({
                         "clearCurrentCanvas",
                         "clearMarksCanvas",
                       ],
-                      to: ["pencil", "inactive"],
+                      to: ["inactive"],
                     },
                     MEDIUM_CLEARED: {
                       get: "elements",
@@ -171,7 +170,7 @@ const state = createState({
                         "clearCurrentCanvas",
                         "clearMarksCanvas",
                       ],
-                      to: ["pencil", "selecting"],
+                      to: ["selecting"],
                     },
                     SOFT_CLEARED: {
                       get: "elements",
@@ -181,7 +180,6 @@ const state = createState({
                         "clearCurrentCanvas",
                         "clearMarksCanvas",
                       ],
-                      to: ["pencil"],
                     },
                     TOGGLED_PRESSURE: { do: "togglePressure" },
                     SELECTED_PENCIL: { to: "pencil" },
@@ -197,6 +195,7 @@ const state = createState({
                   initial: "pencil",
                   states: {
                     pencil: {
+                      onEnter: "setToolPencil",
                       on: {
                         STARTED_DRAWING: {
                           get: "elements",
@@ -205,6 +204,7 @@ const state = createState({
                       },
                     },
                     rect: {
+                      onEnter: "setToolRect",
                       on: {
                         STARTED_DRAWING: {
                           get: "elements",
@@ -213,6 +213,7 @@ const state = createState({
                       },
                     },
                     ellipse: {
+                      onEnter: "setToolEllipse",
                       on: {
                         STARTED_DRAWING: {
                           get: "elements",
@@ -221,6 +222,7 @@ const state = createState({
                       },
                     },
                     arrow: {
+                      onEnter: "setToolArrow",
                       on: {
                         STARTED_DRAWING: {
                           get: "elements",
@@ -229,6 +231,7 @@ const state = createState({
                       },
                     },
                     eraser: {
+                      onEnter: "setToolEraser",
                       on: {
                         STARTED_DRAWING: {
                           get: "elements",
@@ -495,6 +498,7 @@ const state = createState({
       data.marks = []
     },
     clearPreviousMarks(data, payload, elements: Elements) {
+      data.fading = []
       data.marks = []
     },
     clearCurrentMark(data) {
@@ -535,7 +539,7 @@ const state = createState({
         pressure: data.pressure,
         type: MarkType.Freehand,
         size: data.size,
-        color: data.color,
+        color: `rgba(${data.color}, 1)`,
         strength: 1,
         eraser: false,
         points: [[x, y, pressure]],
@@ -549,7 +553,7 @@ const state = createState({
         pressure: data.pressure,
         type: MarkType.Freehand,
         size: data.size,
-        color: data.color,
+        color: `rgba(${data.color}, 1)`,
         eraser: true,
         strength: 1,
         points: [[x, y, pressure]],
@@ -563,7 +567,7 @@ const state = createState({
         pressure: data.pressure,
         type: MarkType.Rect,
         size: data.size,
-        color: data.color,
+        color: `rgba(${data.color}, 1)`,
         eraser: false,
         strength: 1,
         points: [[x, y, pressure]],
@@ -577,7 +581,7 @@ const state = createState({
         pressure: data.pressure,
         type: MarkType.Ellipse,
         size: data.size,
-        color: data.color,
+        color: `rgba(${data.color}, 1)`,
         eraser: false,
         strength: 1,
         points: [[x, y, pressure]],
@@ -591,7 +595,7 @@ const state = createState({
         pressure: data.pressure,
         type: MarkType.Arrow,
         size: data.size,
-        color: data.color,
+        color: `rgba(${data.color}, 1)`,
         eraser: false,
         strength: 1,
         points: [[x, y, pressure]],
@@ -738,12 +742,27 @@ const state = createState({
     clearRedos(data) {
       data.redos = []
     },
+    // Tools (yawn)
+    setToolPencil(data) {
+      data.selectedTool = "pencil"
+    },
+    setToolEraser(data) {
+      data.selectedTool = "eraser"
+    },
+    setToolRect(data) {
+      data.selectedTool = "rect"
+    },
+    setToolEllipse(data) {
+      data.selectedTool = "ellipse"
+    },
+    setToolArrow(data) {
+      data.selectedTool = "arrow"
+    },
   },
 })
 
 // Draw a mark onto the given canvas
 function getFreehandPath(mark: Mark, isPressure: boolean) {
-  console.log("getting points")
   const { points } = mark
 
   if (points.length < 10) {
@@ -753,31 +772,18 @@ function getFreehandPath(mark: Mark, isPressure: boolean) {
     path.ellipse(x, y, mark.size / 2, mark.size / 2, 0, Math.PI * 2, 0)
     return path
   }
+
   const path = new Path2D(
-    getPath(points, {
-      minSize: mark.size * 0.382,
-      maxSize: isPressure ? mark.size : mark.size / 2,
-      pressure: isPressure,
-      simulatePressure: mark.pointerType !== "pen",
-    })
+    getSvgPathFromStroke(
+      getStroke(points, {
+        size: mark.size,
+        thinning: 0.618,
+        simulatePressure: mark.pointerType !== "pen",
+      })
+    )
   )
+
   return path
-
-  // points.unshift(points[0])
-
-  // const [x, y, ...rest] = cSpline(
-  //   mark.points.reduce<number[]>((acc, [x, y]) => {
-  //     acc.push(x, y)
-  //     return acc
-  //   }, [])
-  // )
-  // console.log(x, y, rest)
-  // const path = new Path2D()
-  // path.moveTo(x, y)
-  // for (let i = 0; i < rest.length - 2; i += 2) {
-  //   path.lineTo(rest[i], rest[i + 1])
-  // }
-  // return path
 }
 
 function getRectPath(mark: Mark) {

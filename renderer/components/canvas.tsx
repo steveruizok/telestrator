@@ -80,6 +80,7 @@ const Layout = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
+    opacity: 1;
   }
 
   & *[data-cursor="true"] {
@@ -95,4 +96,5 @@ const CanvasContainer = styled.div`
   overflow: hidden;
   background-color: transparent;
   position: relative;
+  opacity: 0.82;
 `

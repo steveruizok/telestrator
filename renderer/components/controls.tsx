@@ -19,19 +19,7 @@ export default function Controls() {
   const selectedSize = useSelector((state) => state.data.size)
   const selectedColor = useSelector((state) => state.data.color)
   const isPressure = useSelector((state) => state.data.pressure)
-  const selectedTool = useSelector((state) =>
-    state.isIn("pencil")
-      ? "pencil"
-      : state.isIn("rect")
-      ? "rect"
-      : state.isIn("ellipse")
-      ? "ellipse"
-      : state.isIn("eraser")
-      ? "eraser"
-      : state.isIn("arrow")
-      ? "arrow"
-      : null
-  )
+  const selectedTool = useSelector((state) => state.data.selectedTool)
 
   return (
     <ControlsContainer
@@ -117,7 +105,7 @@ const ControlsContainer = styled.div<{
   opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
   transition: all 0.25s;
   border-radius: 2px 20px 0 0;
-  background-color: rgba(144, 144, 144, 0);
+  background-color: rgba(0, 0, 0, 0);
   transform: ${({ showActive }) =>
     showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
 
@@ -128,7 +116,7 @@ const ControlsContainer = styled.div<{
   :hover {
     opacity: 1;
     transform: translate(0px, 0px);
-    background-color: rgba(144, 144, 144, 0.1);
+    background-color: rgba(0, 0, 0, 0.8);
   }
 
   button {
@@ -142,7 +130,6 @@ const ControlsContainer = styled.div<{
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    color: rgb(144, 144, 144, 1);
 
     &:hover {
       /* background-color: rgba(144, 144, 144, 0.1); */
@@ -161,20 +148,48 @@ const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
   outline: none;
   padding-left: 8px;
 
+  &::before {
+    content: "";
+    border-radius: 100%;
+    position: absolute;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    height: 100%;
+    transform: scale(0.85);
+    transition: all 0.16s;
+    z-index: -1;
+    background-color: rgba(
+      255,
+      255,
+      255,
+      ${({ isSelected }) => (isSelected ? 0.25 : 0)}
+    );
+  }
+
+  &:hover::before {
+    transform: scale(1);
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
   &::after {
     content: "";
     display: block;
     border-radius: 100%;
-    background-color: ${({ color }) => color};
+    background-color: rgba(${({ color }) => color}, 1);
     height: 100%;
     width: 100%;
-    transform: scale(${({ isSelected }) => (isSelected ? 0.68 : 0.4)});
+    transform: scale(${({ isSelected }) => (isSelected ? 0.62 : 0.4)});
     transition: transform 0.12s;
+    border: ${({ color }) =>
+      color === "26, 28, 44"
+        ? "2px solid rgba(144, 144, 144, .5)"
+        : "2px solid transparent"};
   }
 
   &:hover:after {
     border: 1px solid rgba(144, 144, 144, 0);
-    transform: scale(1);
+    transform: scale(0.62);
   }
 `
 
@@ -217,10 +232,14 @@ const SizeButton = styled.button<{
     content: "";
     display: block;
     border-radius: 100%;
-    background-color: ${({ color }) => color};
-    height: ${({ size }) => size}px;
-    width: ${({ size }) => size}px;
+    background-color: rgb(${({ color }) => color});
+    height: ${({ size }) => size / 2}px;
+    width: ${({ size }) => size / 2}px;
     transition: transform 0.12s;
+    border: ${({ color }) =>
+      color === "26, 28, 44"
+        ? "2px solid rgba(144, 144, 144, .5)"
+        : "2px solid transparent"};
   }
 
   &:hover:after {
@@ -232,8 +251,12 @@ const ToolButton = styled.button<{
   isSelected?: boolean
 }>`
   color: ${({ isSelected }) =>
-    isSelected ? "rgba(255, 255, 255, 1)" : "rgb(144, 144, 144, 1)"};
+    isSelected ? "rgba(232, 232, 232, 1)" : "rgb(180,180,180, 1)"};
   transition: all 0.12s;
+
+  &:hover {
+    color: rgba(200, 200, 200, 1);
+  }
 
   &:disabled {
     opacity: 0.5;
@@ -241,7 +264,7 @@ const ToolButton = styled.button<{
 
   &:enabled:hover {
     opacity: 1;
-    color: rgba(144, 144, 144, 1);
+    color: rgba(220, 220, 220, 1);
   }
 
   &::before {
@@ -260,7 +283,7 @@ const ToolButton = styled.button<{
 
   &:enabled:hover::before {
     transform: scale(1);
-    background-color: rgba(144, 144, 144, 0.2);
+    background-color: rgba(255, 255, 255, 0.25);
   }
 `
 
