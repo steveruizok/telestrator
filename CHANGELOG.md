@@ -5,6 +5,7 @@
 - Improves contrast on panel.
 - Updates `perfect-freehand`.
 - Fixes bug where marks would be redrawn after erasing when locked.
+- Fixes bugs on one-point shapes.
 
 # 0.3.0
 
