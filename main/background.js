@@ -1,6 +1,7 @@
-import { app, globalShortcut } from "electron"
+import { app, autoUpdater, globalShortcut } from "electron"
 import serve from "electron-serve"
 import { createWindow } from "./helpers"
+import updater from "update-electron-app"
 
 const isProd = process.env.NODE_ENV === "production"
 
@@ -12,6 +13,39 @@ if (isProd) {
 
 ;(async () => {
   await app.whenReady()
+
+  // Auto Updates
+
+  const server = "https://update.electronjs.org"
+  const feed = `${server}/OWNER/REPO/${process.platform}-${
+    process.arch
+  }/${app.getVersion()}`
+
+  autoUpdater.setFeedURL(feed)
+
+  setInterval(() => {
+    autoUpdater.checkForUpdates()
+  }, 10 * 60 * 1000)
+
+  autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
+    const dialogOpts = {
+      type: "info",
+      buttons: ["Restart", "Later"],
+      title: "Application Update",
+      message: releaseName,
+      detail:
+        "A new version has been downloaded. Restart the application to apply the updates.",
+    }
+
+    dialog.showMessageBox(dialogOpts).then((returnValue) => {
+      if (returnValue.response === 0) autoUpdater.quitAndInstall()
+    })
+  })
+
+  autoUpdater.on("error", (message) => {
+    console.error("There was a problem updating the application")
+    console.error(message)
+  })
 
   // Create window
 
@@ -82,3 +116,5 @@ if (isProd) {
 app.on("window-all-closed", () => {
   app.quit()
 })
+
+updater()

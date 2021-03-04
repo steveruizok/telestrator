@@ -32,4 +32,4 @@ export const colors = [
   // "177, 62, 83",
 ]
 
-export const sizes = [16, 32, 64]
+export const sizes = [8, 16, 32]

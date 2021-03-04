@@ -96,30 +96,61 @@ module.exports =
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! electron */ "electron");
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var electron_serve__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron-serve */ "electron-serve");
-/* harmony import */ var electron_serve__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron_serve__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./helpers */ "./main/helpers/index.js");
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs3/core-js-stable/set-interval */ "./node_modules/@babel/runtime-corejs3/core-js-stable/set-interval.js");
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var electron_serve__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! electron-serve */ "electron-serve");
+/* harmony import */ var electron_serve__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(electron_serve__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./helpers */ "./main/helpers/index.js");
+/* harmony import */ var update_electron_app__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! update-electron-app */ "update-electron-app");
+/* harmony import */ var update_electron_app__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(update_electron_app__WEBPACK_IMPORTED_MODULE_4__);
+
+
 
 
 
 const isProd = "development" === "production";
 
 if (isProd) {
-  electron_serve__WEBPACK_IMPORTED_MODULE_1___default()({
+  electron_serve__WEBPACK_IMPORTED_MODULE_2___default()({
     directory: "app"
   });
 } else {
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].setPath("userData", `${electron__WEBPACK_IMPORTED_MODULE_0__["app"].getPath("userData")} (development)`);
+  electron__WEBPACK_IMPORTED_MODULE_1__["app"].setPath("userData", `${electron__WEBPACK_IMPORTED_MODULE_1__["app"].getPath("userData")} (development)`);
 }
 
 ;
 
 (async () => {
-  await electron__WEBPACK_IMPORTED_MODULE_0__["app"].whenReady(); // Create window
+  await electron__WEBPACK_IMPORTED_MODULE_1__["app"].whenReady(); // Auto Updates
 
-  const mainWindow = Object(_helpers__WEBPACK_IMPORTED_MODULE_2__["createWindow"])("main", {
+  const server = "https://update.electronjs.org";
+  const feed = `${server}/OWNER/REPO/${process.platform}-${process.arch}/${electron__WEBPACK_IMPORTED_MODULE_1__["app"].getVersion()}`;
+  electron__WEBPACK_IMPORTED_MODULE_1__["autoUpdater"].setFeedURL(feed);
+
+  _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default()(() => {
+    electron__WEBPACK_IMPORTED_MODULE_1__["autoUpdater"].checkForUpdates();
+  }, 10 * 60 * 1000);
+
+  electron__WEBPACK_IMPORTED_MODULE_1__["autoUpdater"].on("update-downloaded", (event, releaseNotes, releaseName) => {
+    const dialogOpts = {
+      type: "info",
+      buttons: ["Restart", "Later"],
+      title: "Application Update",
+      message: releaseName,
+      detail: "A new version has been downloaded. Restart the application to apply the updates."
+    };
+    dialog.showMessageBox(dialogOpts).then(returnValue => {
+      if (returnValue.response === 0) electron__WEBPACK_IMPORTED_MODULE_1__["autoUpdater"].quitAndInstall();
+    });
+  });
+  electron__WEBPACK_IMPORTED_MODULE_1__["autoUpdater"].on("error", message => {
+    console.error("There was a problem updating the application");
+    console.error(message);
+  }); // Create window
+
+  const mainWindow = Object(_helpers__WEBPACK_IMPORTED_MODULE_3__["createWindow"])("main", {
     fullscreenable: false,
     width: 100,
     height: 100,
@@ -140,14 +171,14 @@ if (isProd) {
   mainWindow.setAlwaysOnTop(true, "floating");
   mainWindow.setResizable(false); // Window events
 
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("browser-window-focus", () => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["app"].on("browser-window-focus", () => {
     if (mainWindow) {
       mainWindow.webContents.send("projectMsg", {
         eventName: "FOCUSED_WINDOW"
       });
     }
   });
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("browser-window-blur", () => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["app"].on("browser-window-blur", () => {
     if (mainWindow) {
       mainWindow.webContents.send("projectMsg", {
         eventName: "BLURRED_WINDOW"
@@ -155,10 +186,10 @@ if (isProd) {
     }
   }); // Setup global shortcut
 
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].whenReady().then(() => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["app"].whenReady().then(() => {
     // Register a 'CommandOrControl+X' shortcut listener.
-    const ret = electron__WEBPACK_IMPORTED_MODULE_0__["globalShortcut"].register("CommandOrControl+Option+Z", () => {
-      electron__WEBPACK_IMPORTED_MODULE_0__["app"].focus({
+    const ret = electron__WEBPACK_IMPORTED_MODULE_1__["globalShortcut"].register("CommandOrControl+Option+Z", () => {
+      electron__WEBPACK_IMPORTED_MODULE_1__["app"].focus({
         steal: true
       });
       mainWindow.webContents.focus();
@@ -171,9 +202,9 @@ if (isProd) {
       console.warn("Shortcut registration failed.");
     }
   });
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("will-quit", () => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["app"].on("will-quit", () => {
     // Unregister all shortcuts.
-    electron__WEBPACK_IMPORTED_MODULE_0__["globalShortcut"].unregisterAll();
+    electron__WEBPACK_IMPORTED_MODULE_1__["globalShortcut"].unregisterAll();
   }); // Kickoff
 
   if (isProd) {
@@ -187,9 +218,10 @@ if (isProd) {
   }
 })();
 
-electron__WEBPACK_IMPORTED_MODULE_0__["app"].on("window-all-closed", () => {
-  electron__WEBPACK_IMPORTED_MODULE_0__["app"].quit();
+electron__WEBPACK_IMPORTED_MODULE_1__["app"].on("window-all-closed", () => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["app"].quit();
 });
+update_electron_app__WEBPACK_IMPORTED_MODULE_4___default()();
 
 /***/ }),
 
@@ -446,6 +478,17 @@ module.exports = __webpack_require__(/*! core-js-pure/stable/object/get-own-prop
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(/*! core-js-pure/stable/object/keys */ "./node_modules/core-js-pure/stable/object/keys.js");
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime-corejs3/core-js-stable/set-interval.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/@babel/runtime-corejs3/core-js-stable/set-interval.js ***!
+  \****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(/*! core-js-pure/stable/set-interval */ "./node_modules/core-js-pure/stable/set-interval.js");
 
 /***/ }),
 
@@ -3571,6 +3614,45 @@ for (var COLLECTION_NAME in DOMIterables) {
 
 /***/ }),
 
+/***/ "./node_modules/core-js-pure/modules/web.timers.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js-pure/modules/web.timers.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js-pure/internals/export.js");
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js-pure/internals/global.js");
+var userAgent = __webpack_require__(/*! ../internals/engine-user-agent */ "./node_modules/core-js-pure/internals/engine-user-agent.js");
+
+var slice = [].slice;
+var MSIE = /MSIE .\./.test(userAgent); // <- dirty ie9- check
+
+var wrap = function (scheduler) {
+  return function (handler, timeout /* , ...arguments */) {
+    var boundArgs = arguments.length > 2;
+    var args = boundArgs ? slice.call(arguments, 2) : undefined;
+    return scheduler(boundArgs ? function () {
+      // eslint-disable-next-line no-new-func
+      (typeof handler == 'function' ? handler : Function(handler)).apply(this, args);
+    } : handler, timeout);
+  };
+};
+
+// ie9- setTimeout & setInterval additional parameters fix
+// https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#timers
+$({ global: true, bind: true, forced: MSIE }, {
+  // `setTimeout` method
+  // https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-settimeout
+  setTimeout: wrap(global.setTimeout),
+  // `setInterval` method
+  // https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#dom-setinterval
+  setInterval: wrap(global.setInterval)
+});
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js-pure/stable/array/virtual/for-each.js":
 /*!********************************************************************!*\
   !*** ./node_modules/core-js-pure/stable/array/virtual/for-each.js ***!
@@ -3738,6 +3820,21 @@ module.exports = parent;
 
 /***/ }),
 
+/***/ "./node_modules/core-js-pure/stable/set-interval.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/core-js-pure/stable/set-interval.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! ../modules/web.timers */ "./node_modules/core-js-pure/modules/web.timers.js");
+var path = __webpack_require__(/*! ../internals/path */ "./node_modules/core-js-pure/internals/path.js");
+
+module.exports = path.setInterval;
+
+
+/***/ }),
+
 /***/ "electron":
 /*!***************************!*\
   !*** external "electron" ***!
@@ -3768,6 +3865,17 @@ module.exports = require("electron-serve");
 /***/ (function(module, exports) {
 
 module.exports = require("electron-store");
+
+/***/ }),
+
+/***/ "update-electron-app":
+/*!**************************************!*\
+  !*** external "update-electron-app" ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("update-electron-app");
 
 /***/ })
 
