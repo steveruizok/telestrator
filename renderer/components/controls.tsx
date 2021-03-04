@@ -233,8 +233,8 @@ const SizeButton = styled.button<{
     display: block;
     border-radius: 100%;
     background-color: rgb(${({ color }) => color});
-    height: ${({ size }) => size / 2}px;
-    width: ${({ size }) => size / 2}px;
+    height: ${({ size }) => size * 0.75}px;
+    width: ${({ size }) => size * 0.75}px;
     transition: transform 0.12s;
     border: ${({ color }) =>
       color === "26, 28, 44"

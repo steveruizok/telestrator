@@ -788,18 +788,23 @@ function getFreehandPath(mark: Mark, isPressure: boolean) {
 
 function getRectPath(mark: Mark) {
   const { points } = mark
+  const path = new Path2D()
+  if (points.length < 2) return path
+
   const x0 = Math.min(points[0][0], points[1][0])
   const y0 = Math.min(points[0][1], points[1][1])
   const x1 = Math.max(points[0][0], points[1][0])
   const y1 = Math.max(points[0][1], points[1][1])
 
-  const path = new Path2D()
   path.rect(x0, y0, x1 - x0, y1 - y0)
   return path
 }
 
 function getEllipsePath(mark: Mark) {
   const { points } = mark
+  const path = new Path2D()
+  if (points.length < 2) return path
+
   const x0 = Math.min(points[0][0], points[1][0])
   const y0 = Math.min(points[0][1], points[1][1])
   const x1 = Math.max(points[0][0], points[1][0])
@@ -809,13 +814,15 @@ function getEllipsePath(mark: Mark) {
   const cx = x0 + w / 2
   const cy = y0 + h / 2
 
-  const path = new Path2D()
   path.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2)
   return path
 }
 
 function getArrowPath(mark: Mark) {
   const { points } = mark
+  const path = new Path2D()
+  if (points.length < 2) return path
+
   const [[x0, y0], [x1, y1]] = points
   const angle = Math.atan2(y1 - y0, x1 - x0)
   const distance = Math.hypot(y1 - y0, x1 - x0)
@@ -823,7 +830,6 @@ function getArrowPath(mark: Mark) {
   const [x2, y2] = projectPoint(x1, y1, angle + Math.PI * 1.2, leg)
   const [x3, y3] = projectPoint(x1, y1, angle - Math.PI * 1.2, leg)
 
-  const path = new Path2D()
   path.moveTo(x0, y0)
   path.lineTo(x1, y1)
   path.lineTo(x2, y2)
