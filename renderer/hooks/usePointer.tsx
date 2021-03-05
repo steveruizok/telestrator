@@ -25,9 +25,7 @@ interface PointerInfo {
   dy: number
 }
 
-export default function usePointer(
-  onMove = ({ dx, dy, x, y }: PointerInfo) => {}
-) {
+export default function usePointer(onMove = (info: PointerInfo) => {}) {
   React.useEffect(() => {
     function updateMotionValues(e: PointerEvent) {
       const x = e.pageX,

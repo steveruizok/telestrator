@@ -765,14 +765,6 @@ const state = createState({
 function getFreehandPath(mark: Mark, isPressure: boolean) {
   const { points } = mark
 
-  if (points.length < 10) {
-    const path = new Path2D()
-    const [x, y] = points[points.length - 1]
-    path.moveTo(x, y)
-    path.ellipse(x, y, mark.size / 2, mark.size / 2, 0, Math.PI * 2, 0)
-    return path
-  }
-
   const path = new Path2D(
     getSvgPathFromStroke(
       getStroke(points, {

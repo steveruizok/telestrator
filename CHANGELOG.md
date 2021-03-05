@@ -1,3 +1,11 @@
+# 0.3.3
+
+- Fixes bug with short marks.
+
+# 0.3.2
+
+- Update to confirm that auto-updates are working.
+
 # 0.3.1
 
 - Changes colors.
