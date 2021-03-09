@@ -769,7 +769,7 @@ function getFreehandPath(mark: Mark, isPressure: boolean) {
     getSvgPathFromStroke(
       getStroke(points, {
         size: mark.size * 2,
-        thinning: 0.618,
+        thinning: isPressure ? 0.618 : 0,
         simulatePressure: mark.pointerType !== "pen",
       })
     )

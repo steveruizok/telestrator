@@ -1,7 +1,7 @@
-import { app, autoUpdater, globalShortcut } from "electron"
+import { app, globalShortcut } from "electron"
 import serve from "electron-serve"
 import { createWindow } from "./helpers"
-import updater from "update-electron-app"
+import { autoUpdater } from "electron-updater"
 
 const isProd = process.env.NODE_ENV === "production"
 
@@ -16,15 +16,8 @@ if (isProd) {
 
   // Auto Updates
 
-  const server = "https://update.electronjs.org"
-  const feed = `${server}/OWNER/REPO/${process.platform}-${
-    process.arch
-  }/${app.getVersion()}`
-
-  autoUpdater.setFeedURL(feed)
-
   setInterval(() => {
-    autoUpdater.checkForUpdates()
+    autoUpdater.checkForUpdatesAndNotify()
   }, 10 * 60 * 1000)
 
   autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
@@ -43,7 +36,7 @@ if (isProd) {
   })
 
   autoUpdater.on("error", (message) => {
-    console.error("There was a problem updating the application")
+    console.error("There was a problem updating the application.")
     console.error(message)
   })
 
@@ -83,7 +76,10 @@ if (isProd) {
   // Setup global shortcut
 
   app.whenReady().then(() => {
-    // Register a 'CommandOrControl+X' shortcut listener.
+    // Check for updates.
+    autoUpdater.checkForUpdatesAndNotify()
+
+    // Register a 'CommandOrControl+Z' shortcut listener.
     const ret = globalShortcut.register("CommandOrControl+Option+Z", () => {
       app.focus({ steal: true })
       mainWindow.webContents.focus()
@@ -116,5 +112,3 @@ if (isProd) {
 app.on("window-all-closed", () => {
   app.quit()
 })
-
-updater()

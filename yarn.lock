@@ -1123,16 +1123,7 @@
     object.entries "^1.1.1"
     object.fromentries "^2.0.2"
 
-"@state-designer/react@^1.5.1":
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/@state-designer/react/-/react-1.5.1.tgz#d0f550d8adceb937d1174ff9335311b872fe01ba"
-  integrity sha512-JBvwowLO4rONjRYd81p1K7rvb/qEz/2vbdeyIg8RoJvyQiQqjkifZnDlpW6THhCNstv5mHYrb1iu39Lux2YK1w==
-  dependencies:
-    "@state-designer/core" latest
-    lodash "^4.17.20"
-    lodash-es "^4.17.20"
-
-"@state-designer/react@latest":
+"@state-designer/react@^1.5.6", "@state-designer/react@latest":
   version "1.5.6"
   resolved "https://registry.yarnpkg.com/@state-designer/react/-/react-1.5.6.tgz#c13483646689a4565a6a82054ea6c2e60da3fbb2"
   integrity sha512-6/ICOt5lJKZn/V7C/AeWsbe64gjor3Ddn2hE/NblViYvFmWokUrLF1lMTa+RnKIvZGkE+KUAv8GGCWvjy5H6zQ==
@@ -1228,6 +1219,11 @@
   dependencies:
     "@types/prop-types" "*"
     csstype "^3.0.2"
+
+"@types/semver@^7.3.4":
+  version "7.3.4"
+  resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.4.tgz#43d7168fec6fa0988bb1a513a697b29296721afb"
+  integrity sha512-+nVsLKlcUCeMzD2ufHEYuJ9a2ovstb6Dp52A5VsoKxDXgvE051XgHI/33I1EymwkRGQkwnA0LkhnUzituGs4EQ==
 
 "@types/styled-components@^5.1.7":
   version "5.1.7"
@@ -2944,6 +2940,19 @@ electron-to-chromium@^1.3.649:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.681.tgz#facd915ae46a020e8be566a2ecdc0b9444439be9"
   integrity sha512-W6uYvSUTHuyX2DZklIESAqx57jfmGjUkd7Z3RWqLdj9Mmt39ylhBuvFXlskQnvBHj0MYXIeQI+mjiwVddZLSvA==
 
+electron-updater@^4.3.8:
+  version "4.3.8"
+  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-4.3.8.tgz#94f1731682a756385726183e2b04b959cb319456"
+  integrity sha512-/tB82Ogb2LqaXrUzAD8waJC+TZV52Pr0Znfj7w+i4D+jA2GgrKFI3Pxjp+36y9FcBMQz7kYsMHcB6c5zBJao+A==
+  dependencies:
+    "@types/semver" "^7.3.4"
+    builder-util-runtime "8.7.3"
+    fs-extra "^9.1.0"
+    js-yaml "^4.0.0"
+    lazy-val "^1.0.4"
+    lodash.isequal "^4.5.0"
+    semver "^7.3.4"
+
 electron@^11.2.3:
   version "11.2.3"
   resolved "https://registry.yarnpkg.com/electron/-/electron-11.2.3.tgz#8ad1d9858436cfca0e2e5ea7fea326794ae58ebb"
@@ -4283,6 +4292,11 @@ lodash.debounce@^4.0.8:
   version "4.0.8"
   resolved "https://registry.yarnpkg.com/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
   integrity sha1-gteb/zCmfEAF/9XiUVMArZyk168=
+
+lodash.isequal@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/lodash.isequal/-/lodash.isequal-4.5.0.tgz#415c4478f2bcc30120c22ce10ed3226f7d3e18e0"
+  integrity sha1-QVxEePK8wwEgwizhDtMib30+GOA=
 
 lodash.sortby@^4.7.0:
   version "4.7.0"

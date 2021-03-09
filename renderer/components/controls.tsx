@@ -38,6 +38,7 @@ export default function Controls() {
           onClick={() => state.send("SELECTED_COLOR", color)}
         />
       ))}
+      <hr />
       {sizes.map((size, i) => (
         <SizeButton
           key={i}
@@ -47,7 +48,9 @@ export default function Controls() {
           color={selectedColor}
         />
       ))}
+      <hr />
       <ToolButton
+        color={selectedColor}
         isSelected={selectedTool === "pencil"}
         onDoubleClick={() => state.send("TOGGLED_PRESSURE")}
         onClick={(e) => {
@@ -58,31 +61,43 @@ export default function Controls() {
           }
         }}
       >
-        {isPressure ? <PenTool size={24} /> : <Edit2 size={24} />}
+        {isPressure ? <PenTool size={20} /> : <Edit2 size={20} />}
       </ToolButton>
       <ToolButton
+        color={selectedColor}
         isSelected={selectedTool === "arrow"}
         onClick={() => state.send("SELECTED_ARROW")}
       >
-        <ArrowDownLeft size={24} />
+        <ArrowDownLeft size={20} />
       </ToolButton>
       <ToolButton
+        color={selectedColor}
         isSelected={selectedTool === "rect"}
         onClick={() => state.send("SELECTED_RECT")}
       >
-        <Square />
+        <Square size={20} />
       </ToolButton>
       <ToolButton
+        color={selectedColor}
         isSelected={selectedTool === "ellipse"}
         onClick={() => state.send("SELECTED_ELLIPSE")}
       >
-        <Circle />
+        <Circle size={20} />
       </ToolButton>
-      <ToolButton onClick={() => state.send("TOGGLED_FADING")}>
-        {isFading ? <Unlock /> : <Lock />}
+      <hr />
+      <ToolButton
+        isSelected={true}
+        color={"26, 28, 44"}
+        onClick={() => state.send("TOGGLED_FADING")}
+      >
+        {isFading ? <Unlock size={20} /> : <Lock size={20} />}
       </ToolButton>
-      <ToolButton onClick={() => state.send("DEACTIVATED")}>
-        <X size={24} />
+      <ToolButton
+        isSelected={true}
+        color={"26, 28, 44"}
+        onClick={() => state.send("DEACTIVATED")}
+      >
+        <X size={20} />
       </ToolButton>
     </ControlsContainer>
   )
@@ -100,12 +115,12 @@ const ControlsContainer = styled.div<{
   width: 56px;
   display: grid;
   grid-template-columns: 1fr;
-  grid-auto-rows: 40px;
+  grid-auto-rows: min-content;
   padding: 8px 0px;
-  opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
   transition: all 0.25s;
   border-radius: 2px 20px 0 0;
   background-color: rgba(0, 0, 0, 0);
+  opacity: ${({ showActive }) => (showActive ? 1 : 0.2)};
   transform: ${({ showActive }) =>
     showActive ? "translate(0px 0px)" : "translate(-48px, 0px)"};
 
@@ -119,171 +134,103 @@ const ControlsContainer = styled.div<{
     background-color: rgba(0, 0, 0, 0.8);
   }
 
-  button {
-    position: relative;
-    outline: none;
-    z-index: 2;
-    padding: 0 8px;
-    border: none;
-    background-color: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-
-    &:hover {
-      /* background-color: rgba(144, 144, 144, 0.1); */
-    }
+  & hr {
+    width: 100%;
+    height: 1px;
+    margin: 4px 0;
+    padding: 0;
+    border-color: rgba(255, 255, 255, 0.07);
   }
 `
 
-const ColorButton = styled.button<{ isSelected: boolean; color: string }>`
+const Button = styled.button<{}>`
+  height: 48px;
+  width: 56px;
+  position: relative;
+  background: none;
   border: none;
-  padding: 0;
-  font-weight: bold;
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 2;
   outline: none;
-  padding-left: 8px;
 
   &::before {
     content: "";
-    border-radius: 100%;
     position: absolute;
-    top: 0;
+    top: 0px;
+    height: 40px;
+    width: 40px;
     left: 8px;
-    right: 8px;
-    height: 100%;
-    transform: scale(0.85);
-    transition: all 0.16s;
-    z-index: -1;
+    border-radius: 100%;
+    background-color: rgba(255, 255, 255, 1);
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.12s;
+  }
+
+  &:hover::before {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0px;
+    height: 40px;
+    width: 40px;
+    left: 8px;
+    border-radius: 100%;
+  }
+`
+
+const ColorButton = styled(Button)<{ color: string; isSelected: boolean }>`
+  &::before {
     background-color: rgba(
-      255,
-      255,
-      255,
-      ${({ isSelected }) => (isSelected ? 0.25 : 0)}
+      ${({ color }) => (color === "26, 28, 44" ? "180,180,180" : color)},
+      1
+    );
+  }
+  ::after {
+    background-color: rgba(${({ color }) => color}, 1);
+    transform: scale(${({ isSelected }) => (isSelected ? 0.81 : 0.62)});
+    transition: all 0.12s;
+  }
+`
+
+const SizeButton = styled(Button)<{
+  color: string
+  size: number
+  isSelected: boolean
+}>`
+  &::before {
+    background-color: rgba(
+      ${({ color }) => (color === "26, 28, 44" ? "180,180,180" : color)},
+      1
     );
   }
 
-  &:hover::before {
-    transform: scale(1);
-    background-color: rgba(255, 255, 255, 0.3);
-  }
-
-  &::after {
-    content: "";
-    display: block;
-    border-radius: 100%;
+  ::after {
     background-color: rgba(${({ color }) => color}, 1);
-    height: 100%;
-    width: 100%;
-    transform: scale(${({ isSelected }) => (isSelected ? 0.62 : 0.4)});
-    transition: transform 0.12s;
-    border: ${({ color }) =>
-      color === "26, 28, 44"
-        ? "2px solid rgba(144, 144, 144, .5)"
-        : "2px solid transparent"};
-  }
-
-  &:hover:after {
-    border: 1px solid rgba(144, 144, 144, 0);
-    transform: scale(0.62);
+    transform: scale(${({ size }) => size / 40});
+    transition: all 0.12s;
   }
 `
-
-const SizeButton = styled.button<{
-  isSelected: boolean
-  size: number
+const ToolButton = styled(Button)<{
   color: string
-}>`
-  opacity: ${({ isSelected }) => (isSelected ? "1" : ".5")};
-  background-color: (
-    ${({ isSelected }) =>
-      isSelected ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0)"}
-  );
-
-  &::before {
-    content: "";
-    border-radius: 100%;
-    position: absolute;
-    top: 0;
-    left: 8px;
-    right: 8px;
-    height: 100%;
-    transform: scale(0.85);
-    transition: all 0.16s;
-    z-index: -1;
-    background-color: rgba(255, 255, 255, 0);
-  }
-
-  &:hover::before {
-    transform: scale(1);
-    background-color: rgba(255, 255, 255, 0.3);
-  }
-
-  &:hover {
-    opacity: 1;
-    color: #fff;
-  }
-
-  &::after {
-    content: "";
-    display: block;
-    border-radius: 100%;
-    background-color: rgb(${({ color }) => color});
-    height: ${({ size }) => size * 0.75}px;
-    width: ${({ size }) => size * 0.75}px;
-    transition: transform 0.12s;
-    border: ${({ color }) =>
-      color === "26, 28, 44"
-        ? "2px solid rgba(144, 144, 144, .5)"
-        : "2px solid transparent"};
-  }
-
-  &:hover:after {
-    transform: scale(1);
-  }
-`
-
-const ToolButton = styled.button<{
   isSelected?: boolean
 }>`
-  color: ${({ isSelected }) =>
-    isSelected ? "rgba(232, 232, 232, 1)" : "rgb(180,180,180, 1)"};
-  transition: all 0.12s;
-
-  &:hover {
-    color: rgba(200, 200, 200, 1);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-  }
-
-  &:enabled:hover {
-    opacity: 1;
-    color: rgba(220, 220, 220, 1);
-  }
+  color: rgba(
+    ${({ color }) => (color === "26, 28, 44" ? "180,180,180" : color)},
+    1
+  );
+  opacity: ${({ isSelected }) => (isSelected ? 1 : 0.5)};
+  padding-bottom: 4px;
+  padding-top: 0px;
 
   &::before {
-    content: "";
-    border-radius: 100%;
-    position: absolute;
-    top: 0;
-    left: 8px;
-    height: 40px;
-    width: 40px;
-    transform: scale(0.85);
-    transition: all 0.16s;
-    z-index: -1;
-    background-color: rgba(144, 144, 144, 0);
-  }
-
-  &:enabled:hover::before {
-    transform: scale(1);
-    background-color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(
+      ${({ color }) => (color === "26, 28, 44" ? "180,180,180" : color)},
+      1
+    );
   }
 `
 
@@ -302,9 +249,9 @@ const canRedo = useSelector((state) => state.can("REDO"))
   onClick={() => state.send("SELECTED_ERASER")}
   onDoubleClick={() => state.send("MEDIUM_CLEARED")}
 >
-  <MinusCircle size={24} />
+  <MinusCircle size={20} />
 </ToolButton> 
 <ToolButton>
-  <Settings size={24} />
+  <Settings size={20} />
 </ToolButton> 
 */

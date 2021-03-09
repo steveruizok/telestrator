@@ -1,3 +1,8 @@
+# 0.3.4
+
+- Improves panel styling, updates auto updates.
+- Fixes bug with pencil tool.
+
 # 0.3.3
 
 - Fixes bug with short marks.
