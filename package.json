@@ -1,5 +1,5 @@
 {
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "name": "telestrator",
   "description": "An over-screen drawing app.",
@@ -16,7 +16,7 @@
     "build:win64": "nextron build --win --x64",
     "build:mac": "nextron build --mac --x64",
     "build:linux": "nextron build --linux",
-    "release:mac": "gh release create v0.3.3 ./dist/*.dmg"
+    "release:mac": "gh release create v0.3.5 ./dist/*.dmg"
   },
   "dependencies": {
     "@state-designer/react": "^1.5.6",

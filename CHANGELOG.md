@@ -1,3 +1,7 @@
+# 0.3.5
+
+- Not sure, really.
+
 # 0.3.4
 
 - Improves panel styling, updates auto updates.
