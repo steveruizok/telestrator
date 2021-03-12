@@ -6,6 +6,7 @@ import { mvPointer } from "hooks/usePointer"
 
 export default function Cursor() {
   const activeColor = useSelector((state) => state.data.color)
+
   return (
     <CursorContainer
       data-cursor="true"

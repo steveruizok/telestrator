@@ -8,7 +8,7 @@ export default function App() {
   const rMarksCanvas = React.useRef<HTMLCanvasElement>()
   const rCurrentCanvas = React.useRef<HTMLCanvasElement>()
   const showCursor = useSelector((state) => {
-    return state.isIn("active", "cursorVisible")
+    return state.isIn("active", "cursorVisible") && !state.isIn("drawing")
   })
 
   React.useEffect(() => {

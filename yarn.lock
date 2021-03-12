@@ -1112,6 +1112,17 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
+"@state-designer/core@1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@state-designer/core/-/core-1.6.1.tgz#12afaccc1930cee9f5b0c9a22f41d15f41685eac"
+  integrity sha512-Ynx9l19GffKtA25HeZwi8Gd9KDBTTbwsQksjZxpNkdCEzDdYw5oeliw42kItjiY2kJnVhjv31IjqR6RlIDNq6A==
+  dependencies:
+    immer "^8.0.1"
+    lodash "^4.17.20"
+    lodash-es "^4.17.20"
+    object.entries "^1.1.1"
+    object.fromentries "^2.0.2"
+
 "@state-designer/core@latest":
   version "1.4.5"
   resolved "https://registry.yarnpkg.com/@state-designer/core/-/core-1.4.5.tgz#efb4e7ed8f71d354d1cf612183e23c1c0926e0b9"
@@ -1123,7 +1134,14 @@
     object.entries "^1.1.1"
     object.fromentries "^2.0.2"
 
-"@state-designer/react@^1.5.6", "@state-designer/react@latest":
+"@state-designer/react@^1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@state-designer/react/-/react-1.6.1.tgz#e41e2f66babb981c120dc7fa8d9851cc89812368"
+  integrity sha512-W2AsP2XYAvgFddEdzX842FoOLVYVOvlfedmF1c1bAnAhzZhq52l+/pG/RljqxTAHr/dJImoqeJ3WXP1HZZJvEQ==
+  dependencies:
+    "@state-designer/core" "1.6.1"
+
+"@state-designer/react@latest":
   version "1.5.6"
   resolved "https://registry.yarnpkg.com/@state-designer/react/-/react-1.5.6.tgz#c13483646689a4565a6a82054ea6c2e60da3fbb2"
   integrity sha512-6/ICOt5lJKZn/V7C/AeWsbe64gjor3Ddn2hE/NblViYvFmWokUrLF1lMTa+RnKIvZGkE+KUAv8GGCWvjy5H6zQ==
@@ -2105,11 +2123,6 @@ caniuse-lite@^1.0.30001181:
   version "1.0.30001196"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001196.tgz#00518a2044b1abf3e0df31fadbe5ed90b63f4e64"
   integrity sha512-CPvObjD3ovWrNBaXlAIGWmg2gQQuJ5YhuciUOjPRox6hIQttu8O+b51dx6VIpIY9ESd2d0Vac1RKpICdG4rGUg==
-
-cardinal-spline@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/cardinal-spline/-/cardinal-spline-0.0.1.tgz#55066f224d5e441bf79b5a484bf6573941f141de"
-  integrity sha1-VQZvIk1eRBv3m1pIS/ZXOUHxQd4=
 
 chalk@2.4.2, chalk@^2.0.0, chalk@^2.4.2:
   version "2.4.2"
@@ -5018,10 +5031,10 @@ pend@~1.2.0:
   resolved "https://registry.yarnpkg.com/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
   integrity sha1-elfrVQpng/kRUzH89GY9XI4AelA=
 
-perfect-freehand@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/perfect-freehand/-/perfect-freehand-0.3.0.tgz#892624c83550ed2c71b5c9fbe67fc87b1b13ba8a"
-  integrity sha512-8jdmc0So/NLfZokOGD1g+7JfJsD02MF0dHFP3QxKbESC7R6TBavM6aD08hWPX3KUTp25OhrrTYb6HzVVxgUq/w==
+perfect-freehand@^0.3.4:
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/perfect-freehand/-/perfect-freehand-0.3.4.tgz#13a3740cf2fa52e0778f99b666fd64d19edf8ed0"
+  integrity sha512-1Ad5Ra26uZ3u1Q/qw02YkREm8aq2v47FS7pHjB80A5yqFHjMFBy/lSD631wtrDC31pwB6GOuMjAbiPQXs5Gswg==
 
 picomatch@^2.0.4, picomatch@^2.2.1:
   version "2.2.2"

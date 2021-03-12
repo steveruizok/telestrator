@@ -248,9 +248,11 @@ const state = createState({
                     notDrawing: {
                       on: {
                         STARTED_DRAWING: {
-                          if: "drawingWithPen",
-                          to: ["cursorHidden", "drawing"],
-                          else: { to: "drawing" },
+                          to: "drawing",
+                          // Yes for iPad, no for Wacom. Hmm...
+                          // if: "drawingWithPen",
+                          // to: ["cursorHidden", "drawing"],
+                          // else: { to: "drawing" },
                         },
                       },
                       onEnter: {
@@ -686,6 +688,7 @@ const state = createState({
         ctx.clearRect(0, 0, cvs.width, cvs.height)
 
         if (mark === undefined) return
+        if (mark.points.length === 0) return
 
         const { type } = mark
 

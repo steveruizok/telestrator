@@ -1,6 +1,10 @@
 export function getSvgPathFromStroke(stroke: number[][]) {
   const d: string[] = []
 
+  if (stroke.length < 2) {
+    return ""
+  }
+
   let [p0, p1] = stroke
 
   d.push(`M ${p0[0]} ${p0[1]} Q`)
