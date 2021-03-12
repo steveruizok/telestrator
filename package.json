@@ -1,8 +1,8 @@
 {
-  "version": "0.3.5",
+  "version": "0.3.6",
   "private": true,
   "name": "telestrator",
-  "description": "An over-screen drawing app.",
+  "description": "A disappearing drawing tool for your screen.",
   "author": "Steve Ruiz @steveruizok",
   "homepage": "https://github.com/steveruizok/telestrator",
   "repository": "https://github.com/steveruizok/telestrator",
@@ -10,13 +10,8 @@
   "scripts": {
     "dev": "nextron",
     "postinstall": "electron-builder install-app-deps",
-    "build": "nextron build",
-    "build:all": "nextron build --all",
-    "build:win32": "nextron build --win --ia32",
-    "build:win64": "nextron build --win --x64",
-    "build:mac": "nextron build --mac --x64",
-    "build:linux": "nextron build --linux",
-    "release:mac": "gh release create v0.3.5 ./dist/*.dmg"
+    "build": "nextron build --mac --x64 --arm64",
+    "release": "gh release create v0.3.6 ./dist/*.dmg"
   },
   "dependencies": {
     "@state-designer/react": "^1.6.1",

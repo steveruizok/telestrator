@@ -1,3 +1,9 @@
+# 0.3.6
+
+- Fixes bug with perfect-freehand.
+- Fixes bug with cursor.
+- Improves cursor hiding.
+
 # 0.3.5
 
 - Not sure, really.
