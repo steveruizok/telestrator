@@ -40,15 +40,15 @@ You can also activate the app at any time by pressing `Command + Option + Z`.
 
 A loose idea of the features planned for development.
 
-- [] Alert user to deactivate shortcut on first activation.
-- [] In-app updates.
-- [] Preferences menu.
-- [] Customize global shortcut.
-- [] Customize sizes.
-- [] Customize colors.
-- [] Customize background color (e.g. chroma key).
-- [] Customize toolbar location (e.g. left, right, bottom, top).
-- [] Add as menu icon instead of dock icon.
+- [ ] Alert user to deactivate shortcut on first activation.
+- [ ] In-app updates.
+- [ ] Preferences menu.
+- [ ] Customize global shortcut.
+- [ ] Customize sizes.
+- [ ] Customize colors.
+- [ ] Customize background color (e.g. chroma key).
+- [ ] Customize toolbar location (e.g. left, right, bottom, top).
+- [ ] Add as menu icon instead of dock icon.
 
 ## Developing
 
