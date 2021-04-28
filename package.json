@@ -1,5 +1,5 @@
 {
-  "version": "0.3.6",
+  "version": "0.3.7",
   "private": true,
   "name": "telestrator",
   "description": "A disappearing drawing tool for your screen.",
@@ -11,7 +11,7 @@
     "dev": "nextron",
     "postinstall": "electron-builder install-app-deps",
     "build": "nextron build --mac --x64 --arm64",
-    "release": "gh release create v0.3.6 ./dist/*.dmg"
+    "release": "gh release create v0.3.7 ./dist/*.dmg"
   },
   "dependencies": {
     "@state-designer/react": "^1.6.1",
@@ -20,7 +20,7 @@
     "electron-updater": "^4.3.8",
     "framer-motion": "^3.3.0",
     "lodash-es": "^4.17.20",
-    "perfect-freehand": "^0.3.4",
+    "perfect-freehand": "^0.3.5",
     "react-feather": "^2.0.9",
     "state-designer": "^1.5.6",
     "styled-components": "^5.2.1",

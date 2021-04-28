@@ -16,10 +16,6 @@ if (isProd) {
 
   // Auto Updates
 
-  setInterval(() => {
-    autoUpdater.checkForUpdatesAndNotify()
-  }, 10 * 60 * 1000)
-
   autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
     const dialogOpts = {
       type: "info",
@@ -73,25 +69,21 @@ if (isProd) {
     }
   })
 
-  // Setup global shortcut
+  // Check for updates.
+  autoUpdater.checkForUpdatesAndNotify()
 
-  app.whenReady().then(() => {
-    // Check for updates.
-    autoUpdater.checkForUpdatesAndNotify()
-
-    // Register a 'CommandOrControl+Z' shortcut listener.
-    const ret = globalShortcut.register("CommandOrControl+Option+Z", () => {
-      app.focus({ steal: true })
-      mainWindow.webContents.focus()
-      mainWindow.webContents.send("projectMsg", {
-        eventName: "ACTIVATE_SHORTCUT",
-      })
+  // Register a 'CommandOrControl+Z' shortcut listener.
+  const ret = globalShortcut.register("CommandOrControl+Option+Z", () => {
+    app.focus({ steal: true })
+    mainWindow.webContents.focus()
+    mainWindow.webContents.send("projectMsg", {
+      eventName: "ACTIVATE_SHORTCUT",
     })
-
-    if (!ret) {
-      console.warn("Shortcut registration failed.")
-    }
   })
+
+  if (!ret) {
+    console.warn("Shortcut registration failed.")
+  }
 
   app.on("will-quit", () => {
     // Unregister all shortcuts.
