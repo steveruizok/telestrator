@@ -4,7 +4,7 @@
 
 An on-screen drawing tool (aka a ["telestrator"](https://en.wikipedia.org/wiki/Telestrator)) by [@steveruizok](https://twitter.com/steveruizok).
 
-This app is in active development! **More soon.**
+This project needs a maintainer! (My hands are full with [tldraw](https://github.com/tldraw/tldraw).
 
 ## Usage
 
