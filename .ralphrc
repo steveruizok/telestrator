@@ -1,0 +1,5 @@
+# Ralph configuration for Telestrator
+# See: ralph --help for available options
+
+# Allow Claude to use Edit tool (required for modifying files)
+ALLOWED_TOOLS="Write,Edit,Bash(git *),Bash(yarn *),Read,Glob,Grep,Task"
