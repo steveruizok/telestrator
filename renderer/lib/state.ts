@@ -1,10 +1,21 @@
-import { remote } from "electron"
 import getStroke from "perfect-freehand"
 import { getSvgPathFromStroke } from "lib/utils"
 import { RefObject } from "react"
 import { createSelectorHook, createState } from "@state-designer/react"
 import { mvPointer } from "hooks/usePointer"
 import * as defaultValues from "lib/defaults"
+
+// Type declaration for the electronAPI exposed via preload script
+declare global {
+  interface Window {
+    electronAPI: {
+      maximizeWindow: () => Promise<void>
+      setIgnoreMouseEvents: (ignore: boolean, options: { forward: boolean }) => Promise<void>
+      onProjectMessage: (callback: (data: { eventName: string }) => void) => void
+      removeProjectMessageListener: () => void
+    }
+  }
+}
 
 // TODO: Fades should begin after a certain amount of time has passed since the last mark was made.
 
@@ -435,18 +446,20 @@ const state = createState({
     removeFadedMarks(data) {
       data.fading = data.fading.filter((mark) => mark.strength > 0)
     },
-    // Pointer Capture
+    // Pointer Capture - Now using secure IPC via electronAPI
     activate() {
-      const mainWindow = remote.getCurrentWindow()
-
-      mainWindow.maximize()
-      mainWindow.setIgnoreMouseEvents(false, { forward: false })
+      // Use the secure electronAPI exposed via preload script
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        window.electronAPI.maximizeWindow()
+        window.electronAPI.setIgnoreMouseEvents(false, { forward: false })
+      }
       document.body.style.setProperty("cursor", "none")
     },
     deactivate() {
-      const mainWindow = remote.getCurrentWindow()
-
-      mainWindow.setIgnoreMouseEvents(true, { forward: true })
+      // Use the secure electronAPI exposed via preload script
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        window.electronAPI.setIgnoreMouseEvents(true, { forward: true })
+      }
       document.body.style.setProperty("cursor", "auto")
     },
     // Setup

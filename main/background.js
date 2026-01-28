@@ -1,9 +1,24 @@
-import { app, globalShortcut } from "electron"
+import { app, globalShortcut, ipcMain, session } from "electron"
 import serve from "electron-serve"
+import path from "path"
 import { createWindow } from "./helpers"
 import { autoUpdater } from "electron-updater"
 
 const isProd = process.env.NODE_ENV === "production"
+
+// Content Security Policy
+// - default-src 'self': Only allow resources from the app's origin
+// - script-src 'self' 'unsafe-eval': Allow scripts from self; unsafe-eval needed for Next.js in dev
+// - style-src 'self' 'unsafe-inline': Allow inline styles for styled-components
+// - img-src 'self' data: blob:: Allow images from self and data/blob URIs for canvas
+// - font-src 'self': Allow fonts from self only
+// - connect-src 'self': Allow connections to self only (no external APIs)
+// - object-src 'none': Disallow plugins like Flash
+// - base-uri 'self': Restrict base URL
+// - form-action 'self': Restrict form submissions
+const CSP_POLICY = isProd
+  ? "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+  : "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://localhost:* ws://localhost:* data:; object-src 'none'; base-uri 'self'; form-action 'self'"
 
 if (isProd) {
   serve({ directory: "app" })
@@ -13,6 +28,16 @@ if (isProd) {
 
 ;(async () => {
   await app.whenReady()
+
+  // Apply Content Security Policy to all responses
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [CSP_POLICY]
+      }
+    })
+  })
 
   // Auto Updates
 
@@ -36,8 +61,7 @@ if (isProd) {
     console.error(message)
   })
 
-  // Create window
-
+  // Create window with secure webPreferences
   const mainWindow = createWindow("main", {
     fullscreenable: false,
     width: 100,
@@ -45,7 +69,12 @@ if (isProd) {
     transparent: true,
     frame: false,
     titleBarStyle: "customButtonsOnHover",
-    webPreferences: { enableRemoteModule: true, nodeIntegration: true },
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, "preload.js"),
+    },
     hasShadow: false,
     title: "Telestrator",
   })
@@ -54,6 +83,15 @@ if (isProd) {
   mainWindow.setIgnoreMouseEvents(true, { forward: true })
   mainWindow.setAlwaysOnTop(true, "floating")
   mainWindow.setResizable(false)
+
+  // IPC Handlers for window control (replaces remote module usage)
+  ipcMain.handle("window:maximize", () => {
+    mainWindow.maximize()
+  })
+
+  ipcMain.handle("window:setIgnoreMouseEvents", (event, ignore, options) => {
+    mainWindow.setIgnoreMouseEvents(ignore, options)
+  })
 
   // Window events
 

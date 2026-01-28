@@ -8,7 +8,10 @@ Telestrator is a macOS Electron desktop application that provides an on-screen d
 
 ## Development Commands
 
+**Requires Node.js 16** (Next.js 10 is incompatible with Node 18+)
+
 ```bash
+nvm use 16            # Switch to Node 16 (required)
 yarn install          # Install dependencies
 yarn dev              # Start development server (Electron + Next.js with hot reload)
 yarn build            # Build macOS app (Intel x64 & Apple Silicon arm64)
