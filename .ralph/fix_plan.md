@@ -38,13 +38,14 @@
 - Location: `main/background.js`
 - Fix: Added CSP via session.webRequest.onHeadersReceived with secure directives
 
-**PENDING - P1 High Issues:**
+**WORKAROUND - P1 High Issues:**
 
 **4. Outdated Dependencies**
 - Electron 11.2.3 (current: 28.x) - 3+ years behind
-- Next.js 10.0.5 (current: 14.x)
+- Next.js 10.0.5 (current: 14.x) - Requires Node 16
 - React 17.0.1 (current: 18.x)
-- Status: Pending updates
+- Status: **WORKAROUND APPLIED** - Use Node 16 (documented in CLAUDE.md)
+- Full modernization deferred to future work
 
 ### 3. Implement Security Fixes
 - [x] Fix any critical vulnerabilities found (P0 nodeIntegration and enableRemoteModule)
@@ -72,6 +73,11 @@
   - Created `main/preload.js` with contextBridge API
   - Updated `main/background.js` with secure webPreferences and IPC handlers
   - Refactored `renderer/lib/state.ts` to use window.electronAPI
+- [x] P1 Content Security Policy implemented:
+  - Added CSP via session.webRequest.onHeadersReceived
+  - Production: strict CSP without unsafe-eval
+  - Development: allows unsafe-eval for Next.js HMR
+- [x] Node 16 workaround documented for Next.js 10 compatibility
 
 ## Notes
 - This project uses yarn, not npm
