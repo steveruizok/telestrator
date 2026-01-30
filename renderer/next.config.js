@@ -1,9 +1,12 @@
+/** @type {import('next').NextConfig} */
 module.exports = {
-  webpack: (config) => Object.assign(config, {
-    target: 'electron-renderer',
-  }),
-  // Disable image optimization to avoid sharp dependency issues with Electron
+  output: 'export',
+  distDir: process.env.NODE_ENV === 'production' ? '../app' : '.next',
+  trailingSlash: true,
   images: {
-    disableStaticImages: true,
+    unoptimized: true,
+  },
+  compiler: {
+    styledComponents: true,
   },
 };

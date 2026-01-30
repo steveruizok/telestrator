@@ -17,7 +17,7 @@ export default function App() {
       marksCanvas: rMarksCanvas,
       currentCanvas: rCurrentCanvas,
     })
-    return () => state.send("UNLOADED")
+    return () => { state.send("UNLOADED") }
   }, [])
 
   React.useEffect(() => {

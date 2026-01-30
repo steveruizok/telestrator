@@ -1,4 +1,4 @@
-import { app, globalShortcut, ipcMain, session } from "electron"
+import { app, dialog, globalShortcut, ipcMain, session } from "electron"
 import serve from "electron-serve"
 import path from "path"
 import { createWindow } from "./helpers"
